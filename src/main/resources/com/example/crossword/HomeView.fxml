@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.collections.FXCollections?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.crossword.client.HomeController">
+    <!-- PHẦN CHÀO NGƯỜI DÙNG -->
+    <top>
+        <HBox alignment="CENTER_RIGHT" spacing="10" style="-fx-padding: 10 20 10 10;">
+            <Label text="Xin chào," style="-fx-font-size:16px;"/>
+            <Label fx:id="lblDisplayName" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+        </HBox>
+    </top>
+    <center>
+        <TabPane prefWidth="800" prefHeight="600">
+
+            <!-- TAB 1: DANH SÁCH NGƯỜI CHƠI -->
+            <Tab text="Người chơi">
+                <VBox spacing="10" alignment="TOP_CENTER" style="-fx-padding: 15;">
+                    <Label text="Danh sách người chơi" style="-fx-font-size:18px; -fx-font-weight:bold;" />
+                    <TableView fx:id="tblUsers" prefHeight="500" prefWidth="750">
+                        <columns>
+                            <TableColumn fx:id="colDisplayName" text="Tên hiển thị" prefWidth="250"/>
+                            <TableColumn fx:id="colTotalPoints" text="Tổng điểm" prefWidth="150"/>
+                            <TableColumn fx:id="colTotalWins" text="Số trận thắng" prefWidth="150"/>
+                            <TableColumn fx:id="colStatus" text="Trạng thái" prefWidth="150"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+
+            <!-- TAB 2: LỊCH SỬ ĐẤU -->
+            <Tab text="Lịch sử đấu">
+                <VBox spacing="10" style="-fx-padding: 15;">
+                    <Label text="Danh sách trận đấu" style="-fx-font-size:18px; -fx-font-weight:bold;" />
+                    <TableView fx:id="tblGames" prefHeight="250">
+                        <columns>
+                            <TableColumn fx:id="colGameId" text="Mã trận" prefWidth="100"/>
+                            <TableColumn fx:id="colOpponent" text="Đối thủ" prefWidth="200"/>
+                            <TableColumn fx:id="colResult" text="Kết quả" prefWidth="150"/>
+                            <TableColumn fx:id="colStartTime" text="Thời gian" prefWidth="200"/>
+                        </columns>
+                    </TableView>
+
+                    <Label text="Chi tiết trận đấu" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+
+                    <TableView fx:id="tblGameDetails" prefHeight="250">
+                        <columns>
+                            <TableColumn fx:id="colRound" text="Vòng" prefWidth="80"/>
+                            <TableColumn fx:id="colWord" text="Từ khóa" prefWidth="150"/>
+                            <TableColumn fx:id="colPlayerAnswer" text="Câu trả lời của bạn" prefWidth="200"/>
+                            <TableColumn fx:id="colOpponentAnswer" text="Câu trả lời đối thủ" prefWidth="200"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+
+            <!-- TAB 3: BẢNG XẾP HẠNG -->
+            <Tab text="Bảng xếp hạng">
+                <VBox spacing="10" style="-fx-padding: 15;" alignment="TOP_CENTER">
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Xếp theo:" style="-fx-font-size:14px;"/>
+                        <ComboBox fx:id="cbSortType" prefWidth="200">
+                            <items>
+                                <FXCollections fx:factory="observableArrayList">
+                                    <String fx:value="Tổng trận thắng"/>
+                                    <String fx:value="Tổng điểm"/>
+                                </FXCollections>
+                            </items>
+                        </ComboBox>
+                    </HBox>
+
+                    <TableView fx:id="tblRanking" prefHeight="500" prefWidth="750">
+                        <columns>
+                            <TableColumn fx:id="colRankDisplayName" text="Tên hiển thị" prefWidth="250"/>
+                            <TableColumn fx:id="colRankPoints" text="Tổng điểm" prefWidth="150"/>
+                            <TableColumn fx:id="colRankWins" text="Tổng thắng" prefWidth="150"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+
+        </TabPane>
+    </center>
+</BorderPane>

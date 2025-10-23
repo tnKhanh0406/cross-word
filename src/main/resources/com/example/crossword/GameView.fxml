@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.crossword.client.GameController"
+            prefWidth="1100" prefHeight="700">
+
+    <!-- TOP: Timer + Scores -->
+    <top>
+        <HBox spacing="30" alignment="CENTER_LEFT" style="-fx-padding:12 16 12 16; -fx-background-color:#F5F7FA;">
+            <Label text="Thời gian còn lại:" style="-fx-font-size:14px;"/>
+            <Label fx:id="lblTimer" text="05:00" style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <HBox spacing="10" alignment="CENTER">
+                <VBox spacing="4" alignment="CENTER_RIGHT">
+                    <Label text="Điểm của bạn" style="-fx-font-size:12px; -fx-text-fill:#666;"/>
+                    <Label fx:id="lblMyScore" text="0 / 10" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+                </VBox>
+                <VBox spacing="4" alignment="CENTER_RIGHT" style="-fx-padding:0 0 0 12;">
+                    <Label text="Điểm đối thủ" style="-fx-font-size:12px; -fx-text-fill:#666;"/>
+                    <Label fx:id="lblOpponentScore" text="0 / 10" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+                </VBox>
+            </HBox>
+        </HBox>
+    </top>
+
+    <!-- CENTER: Left = TabPane (10 tabs do controller tạo động), Right = Chat -->
+    <center>
+        <HBox spacing="12" style="-fx-padding:12;">
+            <!-- LEFT: Tabs area -->
+            <VBox VBox.vgrow="ALWAYS" prefWidth="720" spacing="8">
+                <Label text="Ô chữ (10 từ)" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+                <!-- TabPane: controller sẽ add 10 Tab vào tabWords -->
+                <TabPane fx:id="tabWords" tabClosingPolicy="UNAVAILABLE" prefHeight="580" prefWidth="720"/>
+            </VBox>
+
+            <!-- RIGHT: Chat area -->
+            <VBox prefWidth="340" spacing="8" style="-fx-background-color:#fff; -fx-border-color:#e0e0e0; -fx-border-width:1; -fx-padding:8;">
+                <Label text="Chat với đối thủ" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+
+                <!-- Messages list (controller có thể bind/update items) -->
+                <TextArea fx:id="lvChatMessages" prefHeight="470" prefWidth="320" />
+
+                <!-- Input -->
+                <HBox spacing="6" alignment="CENTER_LEFT">
+                    <TextField fx:id="txtChatInput" promptText="Nhập tin nhắn..." HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="btnSendChat" text="Gửi" onAction="#handleSendChat"/>
+                </HBox>
+            </VBox>
+        </HBox>
+    </center>
+
+    <!-- BOTTOM: thông báo chung -->
+    <bottom>
+        <HBox alignment="CENTER_LEFT" style="-fx-padding:8 12 12 12; -fx-background-color:#F8F9FB;">
+            <Label fx:id="lblStatus" text="" style="-fx-font-size:13px; -fx-text-fill:#2a7ae2;"/>
+            <Button fx:id="quitButton" text="Thoát Trò Chơi" onAction="#handleQuitGame"/>
+        </HBox>
+    </bottom>
+</BorderPane>
