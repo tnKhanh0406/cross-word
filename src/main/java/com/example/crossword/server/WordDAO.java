@@ -35,4 +35,23 @@ public class WordDAO {
         return words;
     }
 
+    public Word getWordById(int id) {
+        String sql = "SELECT * FROM word WHERE word_id = ?";
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                Word w = new Word();
+                w.setId(rs.getInt("word_id"));
+                w.setWord(rs.getString("word_text"));
+                w.setHint(rs.getString("hint"));
+                return w;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
 }

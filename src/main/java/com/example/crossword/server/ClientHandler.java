@@ -8,6 +8,7 @@ import java.io.*;
 import java.net.Socket;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 public class ClientHandler implements Runnable {
     private Socket socket;
@@ -90,18 +91,20 @@ public class ClientHandler implements Runnable {
             case "chat":
                 handleChat(message);
                 break;
-            case "get_words":
-                handleGetWords();
-                break;
             case "quit_game":
                 handleQuitGame();
                 break;
+            case "submit_word":
+                Map<String, Object> data = (Map<String, Object>) message.getContent();
+                int gameId = (int) data.get("game_id");
+                int wordId = (int) data.get("word_id");
+                String answer = (String) data.get("answer");
+                handleSubmitWord(gameId, wordId, answer);
         }
     }
 
-    private void handleGetWords() {
-        List<Word> words = wordDAO.getRandomWords(10);
-        sendMessage(new Message("word_list", words));
+    private void handleSubmitWord(int gameId, int wordId, String answer) {
+        gameRoom.handleSubmitWord(this, gameId, wordId, answer);
     }
 
     private void handleQuitGame() {

@@ -135,7 +135,11 @@ public class Client {
                 });
                 break;
             case "game_start":
-                Platform.runLater(this::showGameUI);
+                List<Word> words = (List<Word>) message.getContent();
+                Platform.runLater(() -> {
+                    showGameUI();
+                    gameController.setWords(words);
+                });
                 break;
             case "chat":
                 Platform.runLater(() -> {
@@ -143,9 +147,9 @@ public class Client {
                 });
                 break;
             case "word_list":
-                List<Word> words = (List<Word>) message.getContent();
+                List<Word> words2 = (List<Word>) message.getContent();
                 Platform.runLater(() -> {
-                    gameController.setWords(words);
+                    gameController.setWords(words2);
                 });
         }
     }
@@ -201,7 +205,6 @@ public class Client {
             primaryStage.setScene(scene);
             primaryStage.setTitle("Cross Word - Game Room");
             primaryStage.show();
-            sendMessage(new Message("get_words", null));
         } catch (IOException e) {
             e.printStackTrace();
             showErrorAlert("Không thể tải giao diện phòng chơi.");

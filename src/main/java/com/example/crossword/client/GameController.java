@@ -3,19 +3,12 @@ package com.example.crossword.client;
 import com.example.crossword.model.Message;
 import com.example.crossword.model.Word;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.application.Platform;
-import javafx.scene.text.Text;
 
 import java.io.*;
-import java.net.Socket;
 import java.util.*;
-import java.util.concurrent.*;
-import javafx.animation.*;
-
-import javafx.util.Duration;
 
 public class GameController {
     @FXML private Label lblTimer;
@@ -53,7 +46,14 @@ public class GameController {
 
     public void setWords(List<Word> words) {
         this.words = words;
+        if (tabWords != null) {
+            Platform.runLater(() -> {
+                tabWords.getTabs().clear();
+                initTabs();
+            });
+        }
     }
+
 
     @FXML
     public void initialize() {
@@ -87,7 +87,13 @@ public class GameController {
             txtAnswer.setPromptText("Nhập đáp án của bạn...");
 
             Button btnSubmit = new Button("Gửi");
-            btnSubmit.setOnAction(e -> handleSubmitWord(w, txtAnswer.getText()));
+            btnSubmit.setOnAction(e -> {
+                try {
+                    handleSubmitWord(w, txtAnswer.getText());
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            });
 
             HBox inputBox = new HBox(8, txtAnswer, btnSubmit);
             content.getChildren().addAll(hintLabel, blankLabel, lettersLabel, inputBox);
@@ -147,16 +153,20 @@ public class GameController {
         //
     }
 
-    private void handleSubmitWord(Word w, String answer) {
+    private void handleSubmitWord(Word w, String answer) throws IOException {
         if (answer == null || answer.trim().isEmpty()) {
             lblStatus.setText("Hãy nhập đáp án trước khi gửi!");
             return;
         }
 
         // Gửi lên server để kiểm tra
-//        client.sendMessage(new Message("submit_word", gameId, w.getId(), answer.trim()));
+        Map<String, Object> data = new HashMap<>();
+        data.put("game_id", gameId);
+        data.put("word_id", w.getId());
+        data.put("answer", answer.trim());
 
-        lblStatus.setText("Đã gửi đáp án cho từ \"" + w.getWord() + "\"");
+        client.sendMessage(new Message("submit_word", data));
+        lblStatus.setText("Đã gửi đáp án cho từ \"" + w.getHint() + "\"");
     }
 
     private void startTimer() {
