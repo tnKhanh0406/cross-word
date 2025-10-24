@@ -16,6 +16,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 
 public class Client {
     private Socket socket;
@@ -101,7 +102,7 @@ public class Client {
     }
 
     private void handleMessage(Message message) {
-        System.out.println("Server to Client: " + message.getType() + " - " + message.getContent());
+        System.out.println("📨 Received from server: " + message.getType());
         switch (message.getType()) {
             case "login_success":
                 user = (User) message.getContent();
@@ -134,13 +135,17 @@ public class Client {
                     homeController.handleMatchResponse((String) message.getContent());
                 });
                 break;
-            case "game_start":
-                List<Word> words = (List<Word>) message.getContent();
+            case "game_start": {
+                Map<String, Object> data = (Map<String, Object>) message.getContent();
+                int gameId = (int) data.get("game_id");
+                List<Word> words = (List<Word>) data.get("words");
                 Platform.runLater(() -> {
                     showGameUI();
+                    gameController.setGameId(gameId);
                     gameController.setWords(words);
                 });
                 break;
+            }
             case "chat":
                 Platform.runLater(() -> {
                    gameController.updateChat((String) message.getContent());
@@ -151,6 +156,16 @@ public class Client {
                 Platform.runLater(() -> {
                     gameController.setWords(words2);
                 });
+            case "word_result":
+                Map<String, Object> resultData = (Map<String, Object>) message.getContent();
+                Platform.runLater(() -> gameController.updateWordResult(resultData));
+                break;
+
+            case "game_over":
+                Map<String, Object> gameOverData = (Map<String, Object>) message.getContent();
+                Platform.runLater(() -> gameController.showGameOver(gameOverData));
+                break;
+
         }
     }
 
@@ -205,6 +220,7 @@ public class Client {
             primaryStage.setScene(scene);
             primaryStage.setTitle("Cross Word - Game Room");
             primaryStage.show();
+            System.out.println("[CLIENT] GameView.fxml loaded successfully.");
         } catch (IOException e) {
             e.printStackTrace();
             showErrorAlert("Không thể tải giao diện phòng chơi.");

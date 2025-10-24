@@ -43,4 +43,39 @@ public class GameDAO {
             e.printStackTrace();
         }
     }
+
+    public void updateGameDetailAnswer(int gameId, int wordId, boolean isPlayer1, String answer, boolean correct){
+        System.out.println("CAp nhat thanh cong game detail");
+        String columnAnswer = isPlayer1 ? "player1_answer" : "player2_answer";
+        String columnCorrect = isPlayer1 ? "player1_correct" : "player2_correct";
+
+        String sql = "UPDATE GameDetail SET " + columnAnswer + " = ?, " + columnCorrect + " = ? WHERE game_id = ? AND word_id = ?";
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, answer);
+            ps.setInt(2, correct ? 1 : 0);
+            ps.setInt(3, gameId);
+            ps.setInt(4, wordId);
+            int rows = ps.executeUpdate();
+            if (rows == 0) {
+                System.err.println("[WARN] Không có dòng nào được cập nhật! gameId=" + gameId + ", wordId=" + wordId);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Kết thúc ván game
+    public void finishGame(int gameId, int winnerId, String result) {
+        String sql = "UPDATE Game SET status='finished', end_time=NOW(), winner_id=?, result=? WHERE game_id=?";
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setInt(1, winnerId);
+            ps.setString(2, result);
+            ps.setInt(3, gameId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

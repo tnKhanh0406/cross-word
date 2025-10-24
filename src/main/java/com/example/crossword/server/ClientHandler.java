@@ -95,15 +95,16 @@ public class ClientHandler implements Runnable {
                 handleQuitGame();
                 break;
             case "submit_word":
-                Map<String, Object> data = (Map<String, Object>) message.getContent();
-                int gameId = (int) data.get("game_id");
-                int wordId = (int) data.get("word_id");
-                String answer = (String) data.get("answer");
-                handleSubmitWord(gameId, wordId, answer);
+                handleSubmitWord(message);
+                break;
         }
     }
 
-    private void handleSubmitWord(int gameId, int wordId, String answer) {
+    private void handleSubmitWord(Message message) throws IOException, SQLException {
+        Map<String, Object> data = (Map<String, Object>) message.getContent();
+        int gameId = (int) data.get("game_id");
+        int wordId = (int) data.get("word_id");
+        String answer = (String) data.get("answer");
         gameRoom.handleSubmitWord(this, gameId, wordId, answer);
     }
 

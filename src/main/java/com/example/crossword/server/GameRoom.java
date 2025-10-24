@@ -39,14 +39,21 @@ public class GameRoom {
         this.p2Score = 0;
         this.gameId = gameDAO.createGame(this.player1.getUser().getId(), this.player2.getUser().getId());
         gameDAO.createGameDetails(this.gameId, this.words);
+        System.out.println("Game created with ID = " + this.gameId);
     }
 
     public void startGame() {
         player1.getUser().setStatus("busy");
         player2.getUser().setStatus("busy");
 
-        player1.sendMessage(new Message("game_start", this.words));
-        player2.sendMessage(new Message("game_start", this.words));
+        player1.sendMessage(new Message("game_start", Map.of(
+                "game_id", this.gameId,
+                "words", this.words
+        )));
+        player2.sendMessage(new Message("game_start", Map.of(
+                "game_id", this.gameId,
+                "words", this.words
+        )));
     }
 
     public void handlePlayerDisconnect(ClientHandler disconnectedPlayer) throws SQLException, IOException {
@@ -58,7 +65,57 @@ public class GameRoom {
     }
 
     public void handleSubmitWord(ClientHandler sender, int gameId, int wordId, String answer) {
+        try {
+            boolean isPlayer1 = sender.equals(player1);
+            Word word = wordDAO.getWordById(wordId);
+            boolean isCorrect = word != null && word.getWord().equalsIgnoreCase(answer.trim());
 
+            // Cập nhật vào DB
+            gameDAO.updateGameDetailAnswer(gameId, wordId, isPlayer1, answer, isCorrect);
+
+            // Cập nhật điểm trong GameRoom
+            if (isPlayer1 && isCorrect) {
+                p1Score++;
+            } else if (!isPlayer1 && isCorrect) {
+                p2Score++;
+            }
+
+            // Gửi kết quả về cho cả 2 người
+            Map<String, Object> result = new HashMap<>();
+            result.put("word_id", wordId);
+            result.put("correct", isCorrect);
+            result.put("player_id", sender.getUser().getId());
+            result.put("p1_score", p1Score);
+            result.put("p2_score", p2Score);
+
+            player1.sendMessage(new Message("word_result", result));
+            player2.sendMessage(new Message("word_result", result));
+
+            // Kiểm tra kết thúc game
+            if (p1Score >= WIN_SCORE || p2Score >= WIN_SCORE) {
+                int winnerId = (p1Score > p2Score) ? player1.getUser().getId() :
+                        (p2Score > p1Score) ? player2.getUser().getId() : 0;
+
+                String resultType = (p1Score == p2Score) ? "draw" :
+                        (p1Score > p2Score) ? "p1_win" : "p2_win";
+
+                if (!resultType.equals("draw"))
+                    gameDAO.finishGame(gameId, winnerId, resultType);
+                else
+                    gameDAO.finishGame(gameId, 0, resultType);
+
+                Map<String, Object> endData = new HashMap<>();
+                endData.put("winner_id", winnerId);
+                endData.put("p1_score", p1Score);
+                endData.put("p2_score", p2Score);
+                endData.put("result", resultType);
+
+                player1.sendMessage(new Message("game_over", endData));
+                player2.sendMessage(new Message("game_over", endData));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 //    public void handlePlayerQuit(ClientHandler clientHandler) {
 //        try {

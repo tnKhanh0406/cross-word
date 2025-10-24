@@ -27,7 +27,7 @@ public class GameController {
     private int myScore = 0;
     private int opponentScore = 0;
     private int totalQuestions = 10;
-    private int remainingSeconds = 300; // 5 phút = 300s
+    private int remainingSeconds = 30; // 5 phút = 300s
 
     private Timer gameTimer;
 
@@ -54,6 +54,9 @@ public class GameController {
         }
     }
 
+    public void setGameId(int gameId) {
+        this.gameId = gameId;
+    }
 
     @FXML
     public void initialize() {
@@ -168,6 +171,44 @@ public class GameController {
         client.sendMessage(new Message("submit_word", data));
         lblStatus.setText("Đã gửi đáp án cho từ \"" + w.getHint() + "\"");
     }
+
+    public void updateWordResult(Map<String, Object> data) {
+        int wordId = (int) data.get("word_id");
+        boolean correct = (boolean) data.get("correct");
+        int p1Score = (int) data.get("p1_score");
+        int p2Score = (int) data.get("p2_score");
+
+        lblMyScore.setText(p1Score + " / 10");
+        lblOpponentScore.setText(p2Score + " / 10");
+
+        if (correct) {
+            lblStatus.setText("Từ ID " + wordId + " đã đúng!");
+        } else {
+            lblStatus.setText("Từ ID " + wordId + " sai rồi, thử lại!");
+        }
+    }
+
+    public void showGameOver(Map<String, Object> data) {
+        int winnerId = (int) data.get("winner_id");
+        int myId = client.getUser().getId();
+        String result = (String) data.get("result");
+
+        String message;
+        if ("draw".equals(result)) {
+            message = "Trận đấu hòa!";
+        } else if (winnerId == myId) {
+            message = "Bạn đã chiến thắng!";
+        } else {
+            message = "Bạn đã thua!";
+        }
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Kết thúc trận đấu");
+        alert.setHeaderText(message);
+        alert.setContentText("Điểm của bạn: " + lblMyScore.getText() + "\nĐiểm đối thủ: " + lblOpponentScore.getText());
+        alert.showAndWait();
+    }
+
 
     private void startTimer() {
         gameTimer = new Timer();
