@@ -71,4 +71,28 @@ public class UserDAO {
         }
         return users;
     }
+
+    public void addTotalPoint(int user_id, double points) {
+        String sql = "UPDATE user SET total_points = total_points + ? WHERE user_id = ?";
+        try(Connection conn = DBConnection.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setDouble(1, points);
+            ps.setInt(2, user_id);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void addTotalWin(int user_id, int win) {
+        String sql = "UPDATE user SET total_wins = total_wins + ? WHERE user_id = ?";
+        try(Connection conn = DBConnection.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setInt(1, win);
+            ps.setInt(2, user_id);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

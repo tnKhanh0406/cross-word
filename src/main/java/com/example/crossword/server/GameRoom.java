@@ -5,9 +5,7 @@ import com.example.crossword.model.Word;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class GameRoom {
     private int gameId;
@@ -16,25 +14,31 @@ public class GameRoom {
     private int p1Score;
     private int p2Score;
 
-    private Map<String, String> p1Answer;
-    private Map<String, String> p2Answer;
-
-    private Boolean p1WantsRematch = null;
-    private Boolean p2WantsRematch = null;
-    private final int WIN_SCORE = 10;
+    private boolean p1WantsRematch = false;
+    private boolean p2WantsRematch = false;
     private final int MAX_ROUNDS = 10;
-    private int currentRound;
-    private final int GAME_TIMEOUT = 300;
+    private final int GAME_TIMEOUT = 150;
+    private int remainingTime = GAME_TIMEOUT;
+
+    private transient Timer timer;
+
+    public Timer getTimer() {
+        return timer;
+    }
+
+    public void setTimer(Timer timer) {
+        this.timer = timer;
+    }
 
     private List<Word> words; // 10 từ được chọn ngẫu nhiên từ DB
 
+    private UserDAO userDAO = new UserDAO();
     private GameDAO gameDAO = new GameDAO();
     private WordDAO wordDAO = new WordDAO();
     public GameRoom(ClientHandler p1, ClientHandler p2) {
         this.player1 = p1;
         this.player2 = p2;
-        this.words = wordDAO.getRandomWords(10);
-        this.currentRound = 1;
+        this.words = wordDAO.getRandomWords(MAX_ROUNDS);
         this.p1Score = 0;
         this.p2Score = 0;
         this.gameId = gameDAO.createGame(this.player1.getUser().getId(), this.player2.getUser().getId());
@@ -54,7 +58,88 @@ public class GameRoom {
                 "game_id", this.gameId,
                 "words", this.words
         )));
+        startGameTimer();
     }
+
+    public void endGame() {
+        try {
+//            if (isGameFinished) return; // tránh gọi 2 lần
+//            isGameFinished = true;
+
+            int winnerId = 0;
+            String resultType;
+
+            if (p1Score == p2Score) {
+                resultType = "draw";
+            } else if (p1Score > p2Score) {
+                resultType = "p1_win";
+                winnerId = player1.getUser().getId();
+            } else {
+                resultType = "p2_win";
+                winnerId = player2.getUser().getId();
+            }
+
+            gameDAO.finishGame(gameId, winnerId, resultType);
+
+            // Cập nhật điểm tích lũy
+            if (resultType.equals("p1_win")) {
+                userDAO.addTotalPoint(player1.getUser().getId(), 1);
+                userDAO.addTotalWin(player1.getUser().getId(), 1);
+            } else if (resultType.equals("p2_win")) {
+                userDAO.addTotalPoint(player2.getUser().getId(), 1);
+                userDAO.addTotalWin(player2.getUser().getId(), 1);
+            } else {
+                userDAO.addTotalPoint(player1.getUser().getId(), 0.5);
+                userDAO.addTotalPoint(player2.getUser().getId(), 0.5);
+            }
+
+            // Gửi thông tin kết thúc game riêng biệt
+            Map<String, Object> endDataP1 = new HashMap<>();
+            Map<String, Object> endDataP2 = new HashMap<>();
+
+            endDataP1.put("winner_id", winnerId);
+            endDataP2.put("winner_id", winnerId);
+
+            endDataP1.put("your_score", p1Score);
+            endDataP1.put("opponent_score", p2Score);
+            endDataP2.put("your_score", p2Score);
+            endDataP2.put("opponent_score", p1Score);
+
+            endDataP1.put("result", resultType);
+            endDataP2.put("result", resultType);
+
+            player1.sendMessage(new Message("game_over", endDataP1));
+            player2.sendMessage(new Message("game_over", endDataP2));
+
+            // Đánh dấu game đã kết thúc
+            System.out.println("[SERVER] Game " + gameId + " ended: " + resultType);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void startGameTimer() {
+        timer = new Timer(true); // true = daemon thread, tự dừng khi server tắt
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                remainingTime--;
+
+                // Gửi thời gian còn lại cho cả 2 người chơi
+                Map<String, Object> data = new HashMap<>();
+                data.put("remaining_time", remainingTime);
+                Message msg = new Message("time_update", data);
+                broadcast(msg);
+
+                // Khi hết thời gian thì kết thúc game
+                if (remainingTime <= 0) {
+                    timer.cancel();
+                    endGame();
+                }
+            }
+        }, 1000, 1000);
+    }
+
 
     public void handlePlayerDisconnect(ClientHandler disconnectedPlayer) throws SQLException, IOException {
         //
@@ -80,43 +165,39 @@ public class GameRoom {
                 p2Score++;
             }
 
-            // Gửi kết quả về cho cả 2 người
-            Map<String, Object> result = new HashMap<>();
-            result.put("word_id", wordId);
-            result.put("correct", isCorrect);
-            result.put("player_id", sender.getUser().getId());
-            result.put("p1_score", p1Score);
-            result.put("p2_score", p2Score);
+            // Gửi kết quả RIÊNG cho người gửi
+            Map<String, Object> personalResult = new HashMap<>();
+            personalResult.put("word_id", wordId);
+            personalResult.put("correct", isCorrect);
+            sender.sendMessage(new Message("answer_result", personalResult));
 
-            player1.sendMessage(new Message("word_result", result));
-            player2.sendMessage(new Message("word_result", result));
+            // Gửi cập nhật điểm CHO CẢ 2 (theo hướng hiển thị riêng)
+            Map<String, Object> scoreP1 = new HashMap<>();
+            scoreP1.put("your_score", p1Score);
+            scoreP1.put("opponent_score", p2Score);
+
+            Map<String, Object> scoreP2 = new HashMap<>();
+            scoreP2.put("your_score", p2Score);
+            scoreP2.put("opponent_score", p1Score);
+
+            player1.sendMessage(new Message("update_score", scoreP1));
+            player2.sendMessage(new Message("update_score", scoreP2));
 
             // Kiểm tra kết thúc game
-            if (p1Score >= WIN_SCORE || p2Score >= WIN_SCORE) {
-                int winnerId = (p1Score > p2Score) ? player1.getUser().getId() :
-                        (p2Score > p1Score) ? player2.getUser().getId() : 0;
-
-                String resultType = (p1Score == p2Score) ? "draw" :
-                        (p1Score > p2Score) ? "p1_win" : "p2_win";
-
-                if (!resultType.equals("draw"))
-                    gameDAO.finishGame(gameId, winnerId, resultType);
-                else
-                    gameDAO.finishGame(gameId, 0, resultType);
-
-                Map<String, Object> endData = new HashMap<>();
-                endData.put("winner_id", winnerId);
-                endData.put("p1_score", p1Score);
-                endData.put("p2_score", p2Score);
-                endData.put("result", resultType);
-
-                player1.sendMessage(new Message("game_over", endData));
-                player2.sendMessage(new Message("game_over", endData));
+            if (p1Score >= MAX_ROUNDS || p2Score >= MAX_ROUNDS) {
+                endGame();
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    public void broadcast(Message message) {
+        if (player1 != null) player1.sendMessage(message);
+        if (player2 != null) player2.sendMessage(message);
+    }
+
+
 //    public void handlePlayerQuit(ClientHandler clientHandler) {
 //        try {
 //            // Xác định ai là người thoát

@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
@@ -156,16 +155,31 @@ public class Client {
                 Platform.runLater(() -> {
                     gameController.setWords(words2);
                 });
-            case "word_result":
-                Map<String, Object> resultData = (Map<String, Object>) message.getContent();
-                Platform.runLater(() -> gameController.updateWordResult(resultData));
-                break;
+//            case "word_result":
+//                Map<String, Object> resultData = (Map<String, Object>) message.getContent();
+//                Platform.runLater(() -> gameController.updateWordResult(resultData));
+//                break;
 
             case "game_over":
                 Map<String, Object> gameOverData = (Map<String, Object>) message.getContent();
                 Platform.runLater(() -> gameController.showGameOver(gameOverData));
                 break;
-
+            case "answer_result":
+                Map<String, Object> data = (Map<String, Object>) message.getContent();
+                boolean correct = (boolean) data.get("correct");
+                Platform.runLater(() -> gameController.updateLbl(correct));
+                break;
+            case "update_score":
+                Map<String, Object> scoreData = (Map<String, Object>) message.getContent();
+                int your = (int) scoreData.get("your_score");
+                int opp = (int) scoreData.get("opponent_score");
+                Platform.runLater(() -> gameController.updateScores(your, opp));
+                break;
+            case "time_update":
+                Map<String, Object> dataTime = (Map<String, Object>) message.getContent();
+                int remaining = (int) dataTime.get("remaining_time");
+                Platform.runLater(() -> gameController.updateTime(remaining));
+                break;
         }
     }
 

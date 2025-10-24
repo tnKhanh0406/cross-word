@@ -70,7 +70,13 @@ public class GameDAO {
         String sql = "UPDATE Game SET status='finished', end_time=NOW(), winner_id=?, result=? WHERE game_id=?";
         try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setInt(1, winnerId);
+
+            if (winnerId == 0) {
+                ps.setNull(1, java.sql.Types.INTEGER); // nếu hòa thì set null
+            } else {
+                ps.setInt(1, winnerId);
+            }
+
             ps.setString(2, result);
             ps.setInt(3, gameId);
             ps.executeUpdate();
@@ -78,4 +84,5 @@ public class GameDAO {
             e.printStackTrace();
         }
     }
+
 }
