@@ -7,6 +7,7 @@ import com.example.crossword.model.Word;
 import java.io.*;
 import java.net.Socket;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +21,6 @@ public class ClientHandler implements Runnable {
     private volatile boolean isRunning = true;
 
     private final UserDAO userDAO = new UserDAO();
-    private final WordDAO wordDAO = new WordDAO();
 
     public ClientHandler(Socket socket, Server server) {
         this.socket = socket;
@@ -97,8 +97,60 @@ public class ClientHandler implements Runnable {
             case "submit_word":
                 handleSubmitWord(message);
                 break;
+            case "rematch_request":
+                handleRematchRequest(this, (Map<String, Object>) message.getContent());
+                break;
+
+            case "rematch_response":
+                handleRematchResponse(this, (Map<String, Object>) message.getContent());
+                break;
+
+            case "back_to_home":
+                handleBackToHome(this);
+                break;
         }
     }
+
+    private void handleRematchRequest(ClientHandler sender, Map<String, Object> data) {
+        int opponentId = (int) data.get("opponent_id");
+
+        ClientHandler opponent = server.getClientById(opponentId);
+        if (opponent != null) {
+            Map<String, Object> invite = new HashMap<>();
+            invite.put("from_id", sender.getUser().getId());
+            invite.put("from_name", sender.getUser().getDisplayName());
+            opponent.sendMessage(new Message("rematch_invite", invite));
+        }
+    }
+
+    private void handleRematchResponse(ClientHandler responder, Map<String, Object> data) {
+        int fromId = (int) data.get("from_id");
+        boolean accepted = (boolean) data.get("accepted");
+
+        ClientHandler requester = server.getClientById(fromId);
+
+        if (accepted && requester != null) {
+            GameRoom newRoom = new GameRoom(requester, responder);
+            newRoom.startGame();
+        } else {
+            if (requester != null) {
+                requester.sendMessage(new Message("rematch_declined", null));
+                requester.getUser().setStatus("online");
+                userDAO.updateUserStatus(requester.getUser().getId(), "online");
+                server.broadcast(new Message("status_update", requester.getUser().getUsername() + " online"));
+            }
+            responder.getUser().setStatus("online");
+            userDAO.updateUserStatus(responder.getUser().getId(), "online");
+            server.broadcast(new Message("status_update", requester.getUser().getUsername() + " online"));
+        }
+    }
+
+    private void handleBackToHome(ClientHandler client) {
+        client.getUser().setStatus("online");
+        userDAO.updateUserStatus(client.getUser().getId(), "online");
+        server.broadcast(new Message("status_update", client.getUser().getUsername() + " online"));
+    }
+
 
     private void handleSubmitWord(Message message) throws IOException, SQLException {
         Map<String, Object> data = (Map<String, Object>) message.getContent();

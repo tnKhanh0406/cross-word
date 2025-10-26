@@ -172,7 +172,7 @@ public class GameController {
         lblStatus.setText("Đã gửi đáp án cho từ \"" + w.getHint() + "\"");
     }
 
-    public void showGameOver(Map<String, Object> data) {
+    public void showGameOver(Map<String, Object> data) throws IOException {
         int winnerId = (int) data.get("winner_id");
         int myId = client.getUser().getId();
         String result = (String) data.get("result");
@@ -186,12 +186,33 @@ public class GameController {
             message = "Bạn đã thua!";
         }
 
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        // === Hiển thị thông báo với 2 nút ===
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Kết thúc trận đấu");
         alert.setHeaderText(message);
-        alert.setContentText("Điểm của bạn: " + lblMyScore.getText() + "\nĐiểm đối thủ: " + lblOpponentScore.getText());
-        alert.showAndWait();
+        alert.setContentText("Điểm của bạn: " + lblMyScore.getText()
+                + "\nĐiểm đối thủ: " + lblOpponentScore.getText()
+                + "\n\nBạn muốn làm gì tiếp theo?");
+
+        ButtonType rematchBtn = new ButtonType("Mời chơi lại");
+        ButtonType homeBtn = new ButtonType("Về trang chính");
+        alert.getButtonTypes().setAll(rematchBtn, homeBtn);
+
+        Optional<ButtonType> choice = alert.showAndWait();
+
+        if (choice.isPresent() && choice.get() == rematchBtn) {
+            // Gửi yêu cầu mời chơi lại đến server
+            Map<String, Object> dataOut = new HashMap<>();
+            dataOut.put("action", "rematch_request");
+            dataOut.put("opponent_id", (winnerId == myId) ? data.get("loser_id") : data.get("winner_id"));
+            client.sendMessage(new Message("rematch_request", dataOut));
+        } else {
+            // Về trang chính
+            client.sendMessage(new Message("back_to_home", null));
+            client.showMainUI();
+        }
     }
+
 
 
 //    private void startTimer() {

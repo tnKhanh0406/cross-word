@@ -8,14 +8,17 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class Client {
     private Socket socket;
@@ -155,14 +158,15 @@ public class Client {
                 Platform.runLater(() -> {
                     gameController.setWords(words2);
                 });
-//            case "word_result":
-//                Map<String, Object> resultData = (Map<String, Object>) message.getContent();
-//                Platform.runLater(() -> gameController.updateWordResult(resultData));
-//                break;
-
             case "game_over":
                 Map<String, Object> gameOverData = (Map<String, Object>) message.getContent();
-                Platform.runLater(() -> gameController.showGameOver(gameOverData));
+                Platform.runLater(() -> {
+                    try {
+                        gameController.showGameOver(gameOverData);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
                 break;
             case "answer_result":
                 Map<String, Object> data = (Map<String, Object>) message.getContent();
@@ -180,6 +184,43 @@ public class Client {
                 int remaining = (int) dataTime.get("remaining_time");
                 Platform.runLater(() -> gameController.updateTime(remaining));
                 break;
+            case "rematch_invite": {
+                Map<String, Object> inviteData = (Map<String, Object>) message.getContent();
+                int fromId = (int) inviteData.get("from_id");
+                String fromName = (String) inviteData.get("from_name");
+
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                    alert.setTitle("Lời mời chơi lại");
+                    alert.setHeaderText("Người chơi " + fromName + " mời bạn chơi lại!");
+                    alert.setContentText("Bạn có muốn tham gia không?");
+                    ButtonType acceptBtn = new ButtonType("Đồng ý");
+                    ButtonType declineBtn = new ButtonType("Từ chối");
+                    alert.getButtonTypes().setAll(acceptBtn, declineBtn);
+
+                    Optional<ButtonType> res = alert.showAndWait();
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("from_id", fromId);
+                    response.put("accepted", res.isPresent() && res.get() == acceptBtn);
+                    try {
+                        sendMessage(new Message("rematch_response", response));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                break;
+            }
+
+            case "rematch_declined":
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Mời chơi lại");
+                    alert.setHeaderText("Người chơi kia đã từ chối lời mời!");
+                    alert.showAndWait();
+                    showMainUI();
+                });
+                break;
+
         }
     }
 

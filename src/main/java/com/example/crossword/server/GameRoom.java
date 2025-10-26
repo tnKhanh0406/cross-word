@@ -14,10 +14,9 @@ public class GameRoom {
     private int p1Score;
     private int p2Score;
 
-    private boolean p1WantsRematch = false;
-    private boolean p2WantsRematch = false;
+    private boolean gameEnded = false;
     private final int MAX_ROUNDS = 10;
-    private final int GAME_TIMEOUT = 150;
+    private final int GAME_TIMEOUT = 20;
     private int remainingTime = GAME_TIMEOUT;
 
     private transient Timer timer;
@@ -63,8 +62,12 @@ public class GameRoom {
 
     public void endGame() {
         try {
-//            if (isGameFinished) return; // tránh gọi 2 lần
-//            isGameFinished = true;
+            if (gameEnded) return;
+            gameEnded = true;
+            if (timer != null) {
+                timer.cancel();
+                timer = null;// 👈 dừng timer ngay khi kết thúc game
+            }
 
             int winnerId = 0;
             String resultType;
@@ -123,6 +126,10 @@ public class GameRoom {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
+                if (gameEnded) { // 👈 nếu game đã kết thúc, dừng timer
+                    cancel();
+                    return;
+                }
                 remainingTime--;
 
                 // Gửi thời gian còn lại cho cả 2 người chơi
@@ -138,6 +145,18 @@ public class GameRoom {
                 }
             }
         }, 1000, 1000);
+    }
+
+    public void returnToHome() {
+//        try {
+//            player1.sendMessage(new Message("return_home", null));
+//            player2.sendMessage(new Message("return_home", null));
+//            player1.getUser().setStatus("online");
+//            player2.getUser().setStatus("online");
+//            GameManager.getInstance().removeGameRoom(gameId);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
     }
 
 
