@@ -1,8 +1,6 @@
 package com.example.crossword.client;
 
-import com.example.crossword.model.Message;
-import com.example.crossword.model.User;
-import com.example.crossword.model.Word;
+import com.example.crossword.model.*;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -127,7 +125,26 @@ public class Client {
                     homeController.updateUserList(users);
                 });
                 break;
+            case "history":
+                List<HistoryDTO> histories =(List<HistoryDTO>) message.getContent();
+                Platform.runLater(() -> {
+                    homeController.updateGameList(histories);
+                });
+                break;
+            case "history_details":
+                List<HistoryDetailDTO> list = (List<HistoryDetailDTO>) message.getContent();
+                Platform.runLater(() -> {
+                    homeController.showGameDetails(list);
+                });
+                break;
+            case "ranking_list":
+                List<User> items = (List<User>) message.getContent();
+                Platform.runLater(() -> {
+                   homeController.showLeaderboard(items);
+                });
+                break;
             case "match_request":
+                System.out.println(message.getContent());
                 Platform.runLater(() -> {
                     homeController.showMatchRequest((int) message.getContent());
                 });
@@ -190,6 +207,12 @@ public class Client {
                 String fromName = (String) inviteData.get("from_name");
 
                 Platform.runLater(() -> {
+                    // Đóng popup "Kết thúc trận đấu" nếu còn mở
+                    if (gameController != null && gameController.getGameOverAlert() != null) {
+                        Alert oldAlert = gameController.getGameOverAlert();
+                        if (oldAlert.isShowing()) oldAlert.close();
+                    }
+
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
                     alert.setTitle("Lời mời chơi lại");
                     alert.setHeaderText("Người chơi " + fromName + " mời bạn chơi lại!");
@@ -202,6 +225,7 @@ public class Client {
                     Map<String, Object> response = new HashMap<>();
                     response.put("from_id", fromId);
                     response.put("accepted", res.isPresent() && res.get() == acceptBtn);
+
                     try {
                         sendMessage(new Message("rematch_response", response));
                     } catch (IOException e) {
@@ -210,17 +234,39 @@ public class Client {
                 });
                 break;
             }
+            case "rematch_started":
+                Platform.runLater(() -> {
+                    if (gameController != null && gameController.getGameOverAlert() != null) {
+                        Alert alert = gameController.getGameOverAlert();
+                        if (alert.isShowing()) alert.close();
+                    }
+
+                    try {
+                        showGameUI();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        showErrorAlert("Không thể khởi tạo lại ván mới!");
+                    }
+                });
+                break;
+
 
             case "rematch_declined":
                 Platform.runLater(() -> {
+                    // Đóng popup cũ nếu còn
+                    if (gameController != null && gameController.getGameOverAlert() != null) {
+                        Alert alert = gameController.getGameOverAlert();
+                        if (alert.isShowing()) alert.close();
+                    }
+
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     alert.setTitle("Mời chơi lại");
                     alert.setHeaderText("Người chơi kia đã từ chối lời mời!");
                     alert.showAndWait();
+
                     showMainUI();
                 });
                 break;
-
         }
     }
 
@@ -238,7 +284,7 @@ public class Client {
             primaryStage.setMinWidth(400);
             primaryStage.setMinHeight(300);
             primaryStage.show();
-            sendMessage(new Message("get_users", null));
+//            sendMessage(new Message("get_users", null));
         } catch (IOException e) {
             e.printStackTrace();
             showErrorAlert("khong tai duoc giao dien chinh");

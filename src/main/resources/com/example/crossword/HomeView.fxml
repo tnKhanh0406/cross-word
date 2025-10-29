@@ -77,11 +77,13 @@
 
                     <TableView fx:id="tblRanking" prefHeight="500" prefWidth="750">
                         <columns>
+                            <TableColumn fx:id="colRank" text="Xếp hạng" prefWidth="150"/>
                             <TableColumn fx:id="colRankDisplayName" text="Tên hiển thị" prefWidth="250"/>
                             <TableColumn fx:id="colRankPoints" text="Tổng điểm" prefWidth="150"/>
                             <TableColumn fx:id="colRankWins" text="Tổng thắng" prefWidth="150"/>
                         </columns>
                     </TableView>
+                    <Label fx:id="lblYourRank" text=""/>
                 </VBox>
             </Tab>
 

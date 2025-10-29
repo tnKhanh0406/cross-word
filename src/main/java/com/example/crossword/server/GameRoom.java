@@ -29,6 +29,14 @@ public class GameRoom {
         this.timer = timer;
     }
 
+    public void setGameId(int gameId) {
+        this.gameId = gameId;
+    }
+
+    public void setWords(List<Word> words) {
+        this.words = words;
+    }
+
     private List<Word> words; // 10 từ được chọn ngẫu nhiên từ DB
 
     private UserDAO userDAO = new UserDAO();
@@ -110,6 +118,21 @@ public class GameRoom {
 
             endDataP1.put("result", resultType);
             endDataP2.put("result", resultType);
+
+            if(winnerId != 0) {
+                endDataP1.put("loser_id", (winnerId == player1.getUser().getId())
+                        ? player2.getUser().getId()
+                        : player1.getUser().getId());
+
+                endDataP2.put("loser_id", (winnerId == player1.getUser().getId())
+                        ? player2.getUser().getId()
+                        : player1.getUser().getId());
+            } else {
+                endDataP1.put("loser_id", 0);
+                endDataP2.put("loser_id", 0);
+            }
+            endDataP1.put("opponent_id", player2.getUser().getId());
+            endDataP2.put("opponent_id", player1.getUser().getId());
 
             player1.sendMessage(new Message("game_over", endDataP1));
             player2.sendMessage(new Message("game_over", endDataP2));

@@ -19,6 +19,7 @@ public class UserDAO {
             ps.setString(1, username);
             ps.setString(2, password);
             ResultSet rs = ps.executeQuery();
+            System.out.println(username + " " + password);
 
             if (rs.next()) {
                 User user = new User();
@@ -62,7 +63,7 @@ public class UserDAO {
                 user.setPassword(rs.getString("password"));
                 user.setDisplayName(rs.getString("display_name"));
                 user.setStatus(rs.getString("status"));
-                user.setTotalPoints(rs.getInt("total_points"));
+                user.setTotalPoints(rs.getDouble("total_points"));
                 user.setTotalWins(rs.getInt("total_wins"));
                 users.add(user);
             }
@@ -94,5 +95,30 @@ public class UserDAO {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public List<User> ranking(String sortType) {
+        List<User> users = new ArrayList<>();
+        String sql = "SELECT * FROM User ORDER BY " + sortType;
+        try(Connection conn = DBConnection.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            System.out.println(sortType);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                User user = new User();
+                user.setId(rs.getInt("user_id"));
+                user.setUsername(rs.getString("username"));
+                user.setPassword(rs.getString("password"));
+                user.setDisplayName(rs.getString("display_name"));
+                user.setStatus(rs.getString("status"));
+                user.setTotalPoints(rs.getDouble("total_points"));
+                user.setTotalWins(rs.getInt("total_wins"));
+                users.add(user);
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return users;
     }
 }

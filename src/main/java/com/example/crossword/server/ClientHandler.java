@@ -1,8 +1,6 @@
 package com.example.crossword.server;
 
-import com.example.crossword.model.Message;
-import com.example.crossword.model.User;
-import com.example.crossword.model.Word;
+import com.example.crossword.model.*;
 
 import java.io.*;
 import java.net.Socket;
@@ -21,6 +19,8 @@ public class ClientHandler implements Runnable {
     private volatile boolean isRunning = true;
 
     private final UserDAO userDAO = new UserDAO();
+    private final GameDAO gameDAO = new GameDAO();
+    private final WordDAO wordDAO = new WordDAO();
 
     public ClientHandler(Socket socket, Server server) {
         this.socket = socket;
@@ -82,6 +82,15 @@ public class ClientHandler implements Runnable {
             case "get_users":
                 handleGetUsers();
                 break;
+            case "get_history":
+                handleGetHistory();
+                break;
+            case "get_history_details":
+                handleGetHistoryDetails(message);
+                break;
+            case "get_leaderboard":
+                handleGetLeaderboard(message);
+                break;
             case "request_match":
                 handleRequestMatch(message);
                 break;
@@ -111,6 +120,25 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    private void handleGetLeaderboard(Message message) throws IOException, SQLException {
+        String sortType = (String) message.getContent();
+
+        String orderBy;
+        if ("wins".equalsIgnoreCase(sortType)) {
+            orderBy = "total_wins DESC, total_points DESC";
+        } else {
+            orderBy = "total_points DESC, total_wins DESC";
+        }
+        List<User> users = userDAO.ranking(orderBy);
+        sendMessage(new Message("ranking_list", users));
+    }
+
+    private void handleGetHistoryDetails(Message message) throws IOException, SQLException {
+        int gameId = (int) message.getContent();
+        List<HistoryDetailDTO> list = gameDAO.getGameDetail(gameId, user.getId());
+        sendMessage(new Message("history_details", list));
+    }
+
     private void handleRematchRequest(ClientHandler sender, Map<String, Object> data) {
         int opponentId = (int) data.get("opponent_id");
 
@@ -130,20 +158,50 @@ public class ClientHandler implements Runnable {
         ClientHandler requester = server.getClientById(fromId);
 
         if (accepted && requester != null) {
+            // ✅ Tạo phòng mới
             GameRoom newRoom = new GameRoom(requester, responder);
+
+            // ✅ Khởi tạo gameId mới
+            int newGameId = gameDAO.createGame(
+                    requester.getUser().getId(),
+                    responder.getUser().getId()
+            );
+            newRoom.setGameId(newGameId);
+
+            // ✅ Load lại danh sách từ mới
+            List<Word> newWords = wordDAO.getRandomWords(10); // tùy hàm của bạn
+            newRoom.setWords(newWords);
+
+            // ✅ Gửi tín hiệu rematch_started (để client đóng popup, reset UI)
+            Message startedMsg = new Message("rematch_started", null);
+            requester.sendMessage(startedMsg);
+            responder.sendMessage(startedMsg);
+
+            // ✅ Sau đó bắt đầu ván mới
             newRoom.startGame();
+
+            // ✅ Cập nhật trạng thái
+            requester.getUser().setStatus("busy");
+            responder.getUser().setStatus("busy");
+            server.broadcast(new Message("status_update",
+                    requester.getUser().getUsername() + " busy"));
+            server.broadcast(new Message("status_update",
+                    responder.getUser().getUsername() + " busy"));
+
         } else {
             if (requester != null) {
                 requester.sendMessage(new Message("rematch_declined", null));
                 requester.getUser().setStatus("online");
-                userDAO.updateUserStatus(requester.getUser().getId(), "online");
-                server.broadcast(new Message("status_update", requester.getUser().getUsername() + " online"));
+                server.broadcast(new Message("status_update",
+                        requester.getUser().getUsername() + " online"));
             }
             responder.getUser().setStatus("online");
-            userDAO.updateUserStatus(responder.getUser().getId(), "online");
-            server.broadcast(new Message("status_update", requester.getUser().getUsername() + " online"));
+            server.broadcast(new Message("status_update",
+                    responder.getUser().getUsername() + " online"));
         }
     }
+
+
 
     private void handleBackToHome(ClientHandler client) {
         client.getUser().setStatus("online");
@@ -219,6 +277,11 @@ public class ClientHandler implements Runnable {
         sendMessage(new Message("user_list", users));
     }
 
+    private void handleGetHistory() {
+        List<HistoryDTO> histories = gameDAO.getGamesByUserId(user.getId());
+        sendMessage(new Message("history", histories));
+    }
+
     private void handleLogin(Message message) {
         String[] credentials = (String[]) message.getContent();
         String username = credentials[0];
@@ -248,8 +311,6 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             System.out.println("Lỗi khi gửi tin nhắn tới " + (user != null ? user.getUsername() : "client") + ": "
                     + e.getMessage());
-            // Không gọi lại handleLogout() ở đây để tránh đệ quy
-            // Đánh dấu client là đã ngắt kết nối
             try {
                 socket.close();
             } catch (IOException ex) {

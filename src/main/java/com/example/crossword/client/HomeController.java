@@ -1,10 +1,8 @@
 package com.example.crossword.client;
 
-import com.example.crossword.model.Game;
-import com.example.crossword.model.GameDetail;
-import com.example.crossword.model.Message;
-import com.example.crossword.model.User;
+import com.example.crossword.model.*;
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -17,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class HomeController {
+    @FXML public Label lblYourRank;
     private Client client;
     private ObservableList<User> usersList = FXCollections.observableArrayList();
     // Tab 1
@@ -27,21 +26,25 @@ public class HomeController {
     @FXML private TableColumn<User, String> colStatus;
 
     // Tab 2
-    @FXML private TableView<Game> tblGames;
-    @FXML private TableColumn<Game, Integer> colGameId;
-    @FXML private TableColumn<Game, String> colOpponent;
-    @FXML private TableColumn<Game, String> colResult;
-    @FXML private TableColumn<Game, String> colStartTime;
+    @FXML private TableView<HistoryDTO> tblGames;
+    @FXML private TableColumn<HistoryDTO, Integer> colGameId;
+    @FXML private TableColumn<HistoryDTO, String> colOpponent;
+    @FXML private TableColumn<HistoryDTO, String> colResult;
+    @FXML private TableColumn<HistoryDTO, String> colStartTime;
 
-    @FXML private TableView<GameDetail> tblGameDetails;
-    @FXML private TableColumn<GameDetail, Integer> colRound;
-    @FXML private TableColumn<GameDetail, String> colWord;
-    @FXML private TableColumn<GameDetail, String> colPlayerAnswer;
-    @FXML private TableColumn<GameDetail, String> colOpponentAnswer;
+    @FXML private TableView<HistoryDetailDTO> tblGameDetails;
+    @FXML private TableColumn<HistoryDetailDTO, Integer> colRound;
+    @FXML private TableColumn<HistoryDetailDTO, String> colWord;
+    @FXML private TableColumn<HistoryDetailDTO, String> colPlayerAnswer;
+    @FXML private TableColumn<HistoryDetailDTO, String> colOpponentAnswer;
+
+    private ObservableList<HistoryDTO> gamesList = FXCollections.observableArrayList();
+    private ObservableList<HistoryDetailDTO> detailsList = FXCollections.observableArrayList();
 
     // Tab 3
     @FXML private ComboBox<String> cbSortType;
     @FXML private TableView<User> tblRanking;
+    @FXML private TableColumn<User, Integer> colRank;
     @FXML private TableColumn<User, String> colRankDisplayName;
     @FXML private TableColumn<User, Double> colRankPoints;
     @FXML private TableColumn<User, Integer> colRankWins;
@@ -54,8 +57,7 @@ public class HomeController {
 
     @FXML
     public void initialize() {
-        cbSortType.getSelectionModel().selectFirst();
-
+        //tab 1
         colDisplayName.setCellValueFactory(new PropertyValueFactory<>("displayName"));
         colTotalPoints.setCellValueFactory(new PropertyValueFactory<>("totalPoints"));
         colTotalWins.setCellValueFactory(new PropertyValueFactory<>("totalWins"));
@@ -79,14 +81,78 @@ public class HomeController {
             });
             return row;
         });
+
+        //tab 2
+        colGameId.setCellValueFactory(new PropertyValueFactory<>("game_id"));
+        colOpponent.setCellValueFactory(new PropertyValueFactory<>("opponent_name"));
+        colResult.setCellValueFactory(new PropertyValueFactory<>("result"));
+        colStartTime.setCellValueFactory(new PropertyValueFactory<>("time"));
+
+        tblGames.setItems(gamesList);
+
+        colRound.setCellValueFactory(new PropertyValueFactory<>("round"));
+        colWord.setCellValueFactory(new PropertyValueFactory<>("word"));
+        colPlayerAnswer.setCellValueFactory(new PropertyValueFactory<>("myAnswer"));
+        colOpponentAnswer.setCellValueFactory(new PropertyValueFactory<>("opponentAnswer"));
+        tblGameDetails.setItems(detailsList);
+        tblGames.setRowFactory(tv -> {
+            TableRow<HistoryDTO> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (!row.isEmpty() && event.getClickCount() == 1) {
+                    HistoryDTO clickedHistory = row.getItem();
+                    try {
+                        client.sendMessage(new Message("get_history_details", clickedHistory.getGame_id()));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+            return row;
+        });
+
+        //tab 3
+        cbSortType.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                String sortType = newVal.equals("Tổng điểm") ? "points" : "wins";
+                try {
+                    client.sendMessage(new Message("get_leaderboard", sortType));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        // set các cột bảng
+        colRankDisplayName.setCellValueFactory(new PropertyValueFactory<>("displayName"));
+        colRankPoints.setCellValueFactory(new PropertyValueFactory<>("totalPoints"));
+        colRankWins.setCellValueFactory(new PropertyValueFactory<>("totalWins"));
+        colRank.setCellValueFactory(cellData ->
+                new ReadOnlyObjectWrapper<>(tblRanking.getItems().indexOf(cellData.getValue()) + 1)
+        );
+
     }
 
     public Client getClient() {
         return client;
     }
 
-    public void setClient(Client client) {
+    public void setClient(Client client) throws IOException {
         this.client = client;
+        loadUsers();
+        loadHistory();
+        loadLeaderboard();
+    }
+
+    public void loadUsers() throws IOException {
+        client.sendMessage(new Message("get_users", null));
+    }
+
+    public void loadHistory() throws IOException {
+        client.sendMessage(new Message("get_history", null));
+    }
+
+    public void loadLeaderboard() throws IOException {
+        client.sendMessage(new Message("get_leaderboard", "points"));
     }
 
     public void updateStatus(String statusUpdate) {
@@ -136,5 +202,38 @@ public class HomeController {
         alert.setHeaderText(null);
         alert.setContentText(response);
         alert.showAndWait();
+    }
+
+    public void updateGameList(List<HistoryDTO> histories) {
+        gamesList = FXCollections.observableList(histories);
+        tblGames.setItems(gamesList);
+    }
+
+    public void showGameDetails(List<HistoryDetailDTO> list) {
+        detailsList = FXCollections.observableList(list);
+        tblGameDetails.setItems(detailsList);
+    }
+
+    public void showLeaderboard(List<User> items) {
+        ObservableList<User> leaderboardList = FXCollections.observableArrayList(items);
+        tblRanking.setItems(leaderboardList);
+
+        int rank = -1;
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).getId() == client.getUser().getId()) {
+                rank = i + 1; // vì index bắt đầu từ 0
+                break;
+            }
+        }
+
+        if (rank != -1) {
+            lblYourRank.setText(
+                    "Bạn đang xếp hạng #" + rank +
+                            " — Điểm: " + client.getUser().getTotalPoints() +
+                            " — Thắng: " + client.getUser().getTotalWins()
+            );
+        } else {
+            lblYourRank.setText("Bạn chưa có trong bảng xếp hạng.");
+        }
     }
 }
