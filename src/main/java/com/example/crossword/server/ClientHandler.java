@@ -49,13 +49,9 @@ public class ClientHandler implements Runnable {
             }
         } catch (IOException | ClassNotFoundException | SQLException e) {
             System.out.println("Kết nối với " + (user != null ? user.getUsername() : "client") + " bị ngắt.");
-            isRunning = false; // Dừng vòng lặp
+            isRunning = false;
             if (gameRoom != null) {
-                try {
-                    gameRoom.handlePlayerDisconnect(this);
-                } catch (IOException | SQLException ex) {
-                    ex.printStackTrace();
-                }
+                gameRoom.handlePlayerQuit(this);
             }
         } finally {
             try {
@@ -78,6 +74,12 @@ public class ClientHandler implements Runnable {
         switch (message.getType()) {
             case "login":
                 handleLogin(message);
+                break;
+            case "logout":
+                handleLogout();
+                break;
+            case "register":
+                handleRegister(message);
                 break;
             case "get_users":
                 handleGetUsers();
@@ -120,7 +122,30 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleGetLeaderboard(Message message) throws IOException, SQLException {
+    private void handleRegister(Message message) throws SQLException {
+        String[] register = (String[]) message.getContent();
+        String username = register[0];
+        String password = register[1];
+        String displayName = register[2];
+        if (userDAO.existsByUsername(username)) {
+            sendMessage(new Message("register_failed", "Tên đăng nhập đã tồn tại."));
+        } else {
+            userDAO.createUser(username, password, displayName);
+            sendMessage(new Message("register_success", "Đăng ký thành công!"));
+        }
+    }
+
+    private void handleLogout() {
+        if (user != null) {
+            userDAO.updateUserStatus(user.getId(), "offline");
+            user.setStatus("offline");
+            server.broadcast(new Message("status_update", user.getUsername() + " offline."));
+            sendMessage(new Message("logout_success", "Đăng xuất thành công."));
+            server.removeClient(this);
+        }
+    }
+
+    private void handleGetLeaderboard(Message message) {
         String sortType = (String) message.getContent();
 
         String orderBy;
@@ -133,7 +158,7 @@ public class ClientHandler implements Runnable {
         sendMessage(new Message("ranking_list", users));
     }
 
-    private void handleGetHistoryDetails(Message message) throws IOException, SQLException {
+    private void handleGetHistoryDetails(Message message) {
         int gameId = (int) message.getContent();
         List<HistoryDetail> list = gameDAO.getGameDetail(gameId, user.getId());
         sendMessage(new Message("history_details", list));
@@ -158,29 +183,23 @@ public class ClientHandler implements Runnable {
         ClientHandler requester = server.getClientById(fromId);
 
         if (accepted && requester != null) {
-            // ✅ Tạo phòng mới
             GameRoom newRoom = new GameRoom(requester, responder);
 
-            // ✅ Khởi tạo gameId mới
             int newGameId = gameDAO.createGame(
                     requester.getUser().getId(),
                     responder.getUser().getId()
             );
             newRoom.setGameId(newGameId);
 
-            // ✅ Load lại danh sách từ mới
-            List<Word> newWords = wordDAO.getRandomWords(10); // tùy hàm của bạn
+            List<Word> newWords = wordDAO.getRandomWords(10);
             newRoom.setWords(newWords);
 
-            // ✅ Gửi tín hiệu rematch_started (để client đóng popup, reset UI)
             Message startedMsg = new Message("rematch_started", null);
             requester.sendMessage(startedMsg);
             responder.sendMessage(startedMsg);
 
-            // ✅ Sau đó bắt đầu ván mới
             newRoom.startGame();
 
-            // ✅ Cập nhật trạng thái
             requester.getUser().setStatus("busy");
             responder.getUser().setStatus("busy");
             server.broadcast(new Message("status_update",
@@ -210,7 +229,7 @@ public class ClientHandler implements Runnable {
     }
 
 
-    private void handleSubmitWord(Message message) throws IOException, SQLException {
+    private void handleSubmitWord(Message message) {
         Map<String, Object> data = (Map<String, Object>) message.getContent();
         int gameId = (int) data.get("game_id");
         int wordId = (int) data.get("word_id");
@@ -252,7 +271,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleRequestMatch(Message message) throws IOException, SQLException {
+    private void handleRequestMatch(Message message) {
         int opponentId = (int) message.getContent();
         System.out.println("Received match request from user ID: " + user.getId() + " to opponent ID: " + opponentId);
         ClientHandler opponent = server.getClientById(opponentId);
@@ -317,10 +336,6 @@ public class ClientHandler implements Runnable {
                 ex.printStackTrace();
             }
         }
-    }
-
-    public void clearGameRoom() {
-        this.gameRoom = null;
     }
 
     public Server getServer() {

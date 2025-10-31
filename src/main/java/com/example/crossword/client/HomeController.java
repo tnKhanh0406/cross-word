@@ -122,7 +122,6 @@ public class HomeController {
             }
         });
 
-        // set các cột bảng
         colRankDisplayName.setCellValueFactory(new PropertyValueFactory<>("displayName"));
         colRankPoints.setCellValueFactory(new PropertyValueFactory<>("totalPoints"));
         colRankWins.setCellValueFactory(new PropertyValueFactory<>("totalWins"));
@@ -221,7 +220,7 @@ public class HomeController {
         int rank = -1;
         for (int i = 0; i < items.size(); i++) {
             if (items.get(i).getId() == client.getUser().getId()) {
-                rank = i + 1; // vì index bắt đầu từ 0
+                rank = i + 1;
                 break;
             }
         }
@@ -236,4 +235,29 @@ public class HomeController {
             lblYourRank.setText("Bạn chưa có trong bảng xếp hạng.");
         }
     }
+
+    @FXML
+    private void handleLogout() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Đăng xuất");
+        alert.setHeaderText(null);
+        alert.setContentText("Bạn có chắc chắn muốn đăng xuất không?");
+
+        ButtonType yes = new ButtonType("Có", ButtonBar.ButtonData.YES);
+        ButtonType no = new ButtonType("Không", ButtonBar.ButtonData.NO);
+        alert.getButtonTypes().setAll(yes, no);
+
+        alert.showAndWait().ifPresent(result -> {
+            if (result == yes) {
+                try {
+                    Message logoutMsg = new Message("logout", null);
+                    client.sendMessage(logoutMsg);
+                    client.showLoginUI();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
 }

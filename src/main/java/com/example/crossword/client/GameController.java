@@ -3,6 +3,8 @@ package com.example.crossword.client;
 import com.example.crossword.model.Message;
 import com.example.crossword.model.Word;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.application.Platform;
@@ -26,18 +28,16 @@ public class GameController {
 
     @FXML private Label lblStatus;
     @FXML private Button quitButton;
+    @FXML private VBox vboxCrosswordGrid;
 
     private int myScore = 0;
     private int opponentScore = 0;
     private int totalQuestions = 10;
-    private int remainingSeconds = 300; // 5 phút = 300s
+    private int remainingSeconds = 300; // 5 min = 300s
 
     private Timer gameTimer;
 
     private List<Word> words = new ArrayList<>();
-
-    private String myUsername;
-    private String opponentUsername;
 
     private int gameId;
 
@@ -63,6 +63,7 @@ public class GameController {
             Platform.runLater(() -> {
                 tabWords.getTabs().clear();
                 initTabs();
+                initCrosswordGrid();
             });
         }
     }
@@ -84,6 +85,47 @@ public class GameController {
         lvChatMessages.setEditable(false);
         lblTimer.setText(formatTime(remainingSeconds));
         initTabs();
+        initCrosswordGrid();
+    }
+
+    private void initCrosswordGrid() {
+        vboxCrosswordGrid.getChildren().clear();
+
+        for (int i = 0; i < words.size(); i++) {
+            Word w = words.get(i);
+
+            // HBox cho từng hàng
+            HBox row = new HBox(8);
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.setPadding(new Insets(2, 0, 2, 0));
+
+            // Thêm nhãn số thứ tự
+            Label indexLabel = new Label((i + 1) + ".");
+            indexLabel.setPrefWidth(25);
+            indexLabel.setAlignment(Pos.CENTER_RIGHT);
+            indexLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #444;");
+
+            row.getChildren().add(indexLabel);
+
+            // Thêm các ô chữ
+            int wordLength = w.getWord().length();
+
+            for (int j = 0; j < wordLength; j++) {
+                Label cell = new Label();
+                cell.setPrefSize(32, 32);
+                cell.setAlignment(Pos.CENTER);
+                cell.setStyle(
+                        "-fx-border-color: #bbb;" +
+                                "-fx-border-radius: 4;" +
+                                "-fx-background-radius: 4;" +
+                                "-fx-background-color: #ffffff;" +
+                                "-fx-font-size: 14px;"
+                );
+                row.getChildren().add(cell);
+            }
+
+            vboxCrosswordGrid.getChildren().add(row);
+        }
     }
 
     private void initTabs() {
@@ -97,7 +139,6 @@ public class GameController {
             Label hintLabel = new Label("Gợi ý: " + w.getHint());
             hintLabel.setWrapText(true);
 
-            // Placeholder cho ô chữ (controller khác sẽ sinh ô vuông theo số chữ)
             Label blankLabel = new Label("Số chữ: " + w.getWord().length());
             blankLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #555;");
 
@@ -123,7 +164,6 @@ public class GameController {
 
             tab.setContent(content);
             tabWords.getTabs().add(tab);
-            // Lưu vào map để truy cập sau
             wordInputMap.put(w.getId(), new Pair<>(txtAnswer, btnSubmit));
             wordTabMap.put(w.getId(), tab);
         }
@@ -175,17 +215,12 @@ public class GameController {
         });
     }
 
-//    public void handleTimeOut() throws IOException {
-//        //
-//    }
-
     private void handleSubmitWord(Word w, String answer) throws IOException {
         if (answer == null || answer.trim().isEmpty()) {
             lblStatus.setText("Hãy nhập đáp án trước khi gửi!");
             return;
         }
 
-        // Gửi lên server để kiểm tra
         Map<String, Object> data = new HashMap<>();
         data.put("game_id", gameId);
         data.put("word_id", w.getId());
@@ -213,9 +248,6 @@ public class GameController {
         gameOverAlert = new Alert(Alert.AlertType.CONFIRMATION);
         gameOverAlert.setTitle("Kết thúc trận đấu");
         gameOverAlert.setHeaderText(message);
-//        gameOverAlert.setContentText("Điểm của bạn: " + lblMyScore.getText()
-//                + "\nĐiểm đối thủ: " + lblOpponentScore.getText()
-//                + "\n\nBạn muốn làm gì tiếp theo?");
         StringBuilder content = new StringBuilder();
         if (reason != null && !reason.isEmpty()) {
             content.append(reason).append("\n\n");
@@ -232,8 +264,7 @@ public class GameController {
         gameOverAlert.getButtonTypes().setAll(homeBtn);
 
         gameOverAlert.resultProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue == null) return; // người dùng tắt popup bằng dấu X
-
+            if (newValue == null) return;
             try {
 //                if (newValue == rematchBtn) {
 //                    Map<String, Object> dataOut = new HashMap<>();
@@ -263,7 +294,6 @@ public class GameController {
     }
 
     private void endGame() {
-        // Xử lý khi hết thời gian hoặc kết thúc
         lblStatus.setText("Trò chơi kết thúc!");
         if (gameTimer != null) gameTimer.cancel();
     }
@@ -309,4 +339,3 @@ public class GameController {
         });
     }
 }
-

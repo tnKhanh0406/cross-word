@@ -9,11 +9,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GameDAO {
+public class GameDAO extends DAO{
+    public GameDAO() {
+        super();
+    }
     public int createGame(int p1Id, int p2Id) {
         String sql = "INSERT INTO game (player1_id, player2_id) VALUES (?, ?)";
         try {
-            Connection conn = DBConnection.getConnection();
             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setInt(1, p1Id);
             ps.setInt(2, p2Id);
@@ -30,7 +32,7 @@ public class GameDAO {
 
     public void createGameDetails(int gameId, List<Word> words) {
         String sql = "INSERT INTO gamedetail (game_id, round_number, word_id, player1_answer, player2_answer, player1_correct, player2_correct) VALUES (?, ?, ?, NULL, NULL, 0, 0)";
-        try (Connection conn = DBConnection.getConnection()) {
+        try {
             PreparedStatement ps = conn.prepareStatement(sql);
             int round = 1;
             for (Word w : words) {
@@ -51,7 +53,7 @@ public class GameDAO {
         String columnCorrect = isPlayer1 ? "player1_correct" : "player2_correct";
 
         String sql = "UPDATE GameDetail SET " + columnAnswer + " = ?, " + columnCorrect + " = ? WHERE game_id = ? AND word_id = ?";
-        try (Connection conn = DBConnection.getConnection()) {
+        try {
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, answer);
             ps.setInt(2, correct ? 1 : 0);
@@ -69,7 +71,7 @@ public class GameDAO {
     // Kết thúc ván game
     public void finishGame(int gameId, int winnerId, String result) {
         String sql = "UPDATE Game SET status='finished', end_time=NOW(), winner_id=?, result=? WHERE game_id=?";
-        try (Connection conn = DBConnection.getConnection()) {
+        try {
             PreparedStatement ps = conn.prepareStatement(sql);
 
             if (winnerId == 0) {
@@ -112,7 +114,7 @@ public class GameDAO {
                 ORDER BY g.start_time DESC;
                 
                 """;
-        try(Connection conn = DBConnection.getConnection()) {
+        try {
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setInt(1, userId);
             ps.setInt(2, userId);
@@ -159,7 +161,7 @@ public class GameDAO {
                 ORDER BY gd.round_number;
                 """;
         List<HistoryDetail> gameDetails = new ArrayList<>();
-        try (Connection conn = DBConnection.getConnection()) {
+        try {
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setInt(1, userId);
             ps.setInt(2, userId);

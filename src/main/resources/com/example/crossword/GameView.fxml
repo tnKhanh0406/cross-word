@@ -40,6 +40,9 @@
             <!-- LEFT: Tabs area -->
             <VBox VBox.vgrow="ALWAYS" prefWidth="720" spacing="8">
                 <Label text="Ô chữ (10 từ)" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+
+                <VBox fx:id="vboxCrosswordGrid" spacing="6"
+                      style="-fx-background-color:#fafafa; -fx-border-color:black; -fx-padding:8;"/>
                 <!-- TabPane: controller sẽ add 10 Tab vào tabWords -->
                 <TabPane fx:id="tabWords" tabClosingPolicy="UNAVAILABLE" prefHeight="580" prefWidth="720"/>
             </VBox>

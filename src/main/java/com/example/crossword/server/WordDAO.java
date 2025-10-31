@@ -9,14 +9,17 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class WordDAO {
+public class WordDAO extends DAO{
+
+    public WordDAO() {
+        super();
+    }
     public List<Word> getRandomWords(int limit) {
         List<Word> words = new ArrayList<>();
         String sql = "SELECT word_id, word_text, hint FROM word ORDER BY RAND() LIMIT ?";
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
+        try  {
+            PreparedStatement ps = conn.prepareStatement(sql);
             ps.setInt(1, limit);
             ResultSet rs = ps.executeQuery();
 
@@ -37,7 +40,7 @@ public class WordDAO {
 
     public Word getWordById(int id) {
         String sql = "SELECT * FROM word WHERE word_id = ?";
-        try (Connection conn = DBConnection.getConnection()) {
+        try {
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setInt(1, id);
             ResultSet rs = ps.executeQuery();

@@ -2,18 +2,18 @@ package com.example.crossword.client;
 
 import com.example.crossword.model.Message;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.PasswordField;
+
 import javafx.scene.control.*;
+import java.io.IOException;
 
-import java.io.*;
 
-public class LoginController {
-
+public class RegisterController {
     @FXML private TextField txtUsername;
     @FXML private PasswordField txtPassword;
+    @FXML private TextField txtDisplayName;
     @FXML private Label lblStatus;
-
 
     private Client client;
     public void setClient(Client client) {
@@ -24,29 +24,27 @@ public class LoginController {
         return client;
     }
 
-    @FXML
-    private void handleLogin() throws IOException {
+    public void handleRegister() throws IOException {
         String username = txtUsername.getText().trim();
         String password = txtPassword.getText().trim();
-        if (username.isEmpty() || password.isEmpty()) {
+        String displayName = txtDisplayName.getText().trim();
+
+        if (username.isEmpty() || password.isEmpty() || displayName.isEmpty()) {
             lblStatus.setText("Vui lòng nhập đầy đủ thông tin.");
             return;
         }
-        String[] credentials = {username, password};
-        client.sendMessage(new Message("login", credentials));
+
+        String[] register = {username, password, displayName};
+        client.sendMessage(new Message("register", register));
+    }
+
+    public void handleBackToLogin() {
+        client.showLoginUI();
     }
 
     public void showError(String error) {
         Platform.runLater(() -> {
             lblStatus.setText(error);
         });
-    }
-
-    public void handleRegisterRedirect(ActionEvent actionEvent) {
-        try {
-            client.showRegisterUI(actionEvent);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

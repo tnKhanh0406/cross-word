@@ -30,7 +30,6 @@ public class HelloApplication extends Application {
                 }
             }).start();
 
-            // Thêm event handler cho việc đóng ứng dụng
             primaryStage.setOnCloseRequest(event -> {
                 try {
                     if (client.getUser() != null) {

@@ -2,7 +2,9 @@ package com.example.crossword.client;
 
 import com.example.crossword.model.*;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -28,6 +30,7 @@ public class Client {
     private LoginController loginController = new LoginController();
     private HomeController homeController = new HomeController();
     private GameController gameController = new GameController();
+    private RegisterController registerController = new RegisterController();
 
     private volatile boolean isRunning = true;
 
@@ -56,7 +59,7 @@ public class Client {
             out = new ObjectOutputStream(socket.getOutputStream());
             out.flush();
 
-            isRunning = true; // Đặt lại isRunning thành true
+            isRunning = true;
             listenForMessages();
         } catch (IOException e) {
             e.printStackTrace();
@@ -77,14 +80,14 @@ public class Client {
                 if (isRunning) {
                     ex.printStackTrace();
                     try {
-                        closeConnection(); // Đóng kết nối hiện tại
+                        closeConnection();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                     Platform.runLater(() -> {
                         showErrorAlert("Kết nối tới server bị mất.");
                         try {
-                            showLoginUI(); // Hiển thị giao diện đăng nhập và tái kết nối
+                            showLoginUI();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -102,15 +105,27 @@ public class Client {
     }
 
     private void handleMessage(Message message) {
-        System.out.println("📨 Received from server: " + message.getType());
+        System.out.println("Nhan mes tu server: " + message.getType());
         switch (message.getType()) {
             case "login_success":
                 user = (User) message.getContent();
                 Platform.runLater(this::showMainUI);
                 break;
-            case "login_fail":
+            case "login_fail", "logout_success":
                 Platform.runLater(() -> {
                     loginController.showError((String) message.getContent());
+                });
+                break;
+            case "register_success":
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION, "Đăng ký thành công! Hãy đăng nhập.");
+                    alert.showAndWait();
+                    showLoginUI();
+                });
+                break;
+            case "register_fail":
+                Platform.runLater(() -> {
+                    registerController.showError((String) message.getContent());
                 });
                 break;
             case "status_update":
@@ -208,7 +223,6 @@ public class Client {
                 String fromName = (String) inviteData.get("from_name");
 
                 Platform.runLater(() -> {
-                    // Đóng popup "Kết thúc trận đấu" nếu còn mở
                     if (gameController != null && gameController.getGameOverAlert() != null) {
                         Alert oldAlert = gameController.getGameOverAlert();
                         if (oldAlert.isShowing()) oldAlert.close();
@@ -252,7 +266,6 @@ public class Client {
                 break;
             case "rematch_declined":
                 Platform.runLater(() -> {
-                    // Đóng popup cũ nếu còn
                     if (gameController != null && gameController.getGameOverAlert() != null) {
                         Alert alert = gameController.getGameOverAlert();
                         if (alert.isShowing()) alert.close();
@@ -291,7 +304,7 @@ public class Client {
 
     public void showLoginUI() {
         try {
-            System.out.println("Loading LoginUI.fxml...");
+            System.out.println("Loading login view");
             FXMLLoader loader = new FXMLLoader(LoginController.class.getResource("/com/example/crossword/LoginView.fxml"));
             Parent root = loader.load();
             loginController = loader.getController();
@@ -309,7 +322,7 @@ public class Client {
 
     public void showGameUI() {
         try {
-            System.out.println("Loading Game view...");
+            System.out.println("Loading Game view");
             FXMLLoader loader = new FXMLLoader(GameController.class.getResource("/com/example/crossword/GameView.fxml"));
             Parent root = loader.load();
             gameController = loader.getController();
@@ -321,15 +334,29 @@ public class Client {
             primaryStage.setScene(scene);
             primaryStage.setTitle("Cross Word - Game Room");
             primaryStage.show();
-            System.out.println("[CLIENT] GameView.fxml loaded successfully.");
         } catch (IOException e) {
             e.printStackTrace();
             showErrorAlert("Không thể tải giao diện phòng chơi.");
         }
     }
 
+    public void showRegisterUI(ActionEvent actionEvent) throws IOException {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/crossword/RegisterView.fxml"));
+            Scene scene = new Scene(loader.load());
+            registerController = loader.getController();
+            registerController.setClient(this);
+            Stage stage = (Stage) ((Node) actionEvent.getSource()).getScene().getWindow();
+            stage.setScene(scene);
+            stage.setTitle("Đăng ký tài khoản");
+        } catch (IOException e) {
+            e.printStackTrace();
+            showErrorAlert("Khong the tai giao dien dang ky");
+        }
+    }
+
     public void closeConnection() throws IOException {
-        isRunning = false; // Dừng luồng lắng nghe
+        isRunning = false;
         if (in != null) {
             in.close();
         }

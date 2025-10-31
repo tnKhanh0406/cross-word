@@ -9,5 +9,7 @@
     <TextField fx:id="txtUsername" promptText="Tên đăng nhập" style="-fx-pref-width: 250; -fx-background-radius: 5;"/>
     <PasswordField fx:id="txtPassword" promptText="Mật khẩu" style="-fx-pref-width: 250; -fx-background-radius: 5;"/>
     <Button text="Đăng Nhập" onAction="#handleLogin" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 5; -fx-padding: 8 20;"/>
+    <Button text="Đăng ký" onAction="#handleRegisterRedirect"
+            style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 5; -fx-padding: 8 20;"/>
     <Label fx:id="lblStatus" textFill="red" style="-fx-font-size: 12px;"/>
 </VBox>

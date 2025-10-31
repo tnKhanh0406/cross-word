@@ -3,8 +3,6 @@ package com.example.crossword.server;
 import com.example.crossword.model.Message;
 import com.example.crossword.model.Word;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.*;
 
 public class GameRoom {
@@ -21,14 +19,6 @@ public class GameRoom {
 
     private transient Timer timer;
 
-    public Timer getTimer() {
-        return timer;
-    }
-
-    public void setTimer(Timer timer) {
-        this.timer = timer;
-    }
-
     public void setGameId(int gameId) {
         this.gameId = gameId;
     }
@@ -37,7 +27,7 @@ public class GameRoom {
         this.words = words;
     }
 
-    private List<Word> words; // 10 từ được chọn ngẫu nhiên từ DB
+    private List<Word> words;
 
     private UserDAO userDAO = new UserDAO();
     private GameDAO gameDAO = new GameDAO();
@@ -74,7 +64,7 @@ public class GameRoom {
             gameEnded = true;
             if (timer != null) {
                 timer.cancel();
-                timer = null;// 👈 dừng timer ngay khi kết thúc game
+                timer = null;// dừng timer ngay khi kết thúc game
             }
 
             int winnerId = 0;
@@ -92,7 +82,6 @@ public class GameRoom {
 
             gameDAO.finishGame(gameId, winnerId, resultType);
 
-            // Cập nhật điểm tích lũy
             if (resultType.equals("p1_win")) {
                 userDAO.addTotalPoint(player1.getUser().getId(), 1);
                 userDAO.addTotalWin(player1.getUser().getId(), 1);
@@ -104,7 +93,6 @@ public class GameRoom {
                 userDAO.addTotalPoint(player2.getUser().getId(), 0.5);
             }
 
-            // Gửi thông tin kết thúc game riêng biệt
             Map<String, Object> endDataP1 = new HashMap<>();
             Map<String, Object> endDataP2 = new HashMap<>();
 
@@ -136,20 +124,17 @@ public class GameRoom {
 
             player1.sendMessage(new Message("game_over", endDataP1));
             player2.sendMessage(new Message("game_over", endDataP2));
-
-            // Đánh dấu game đã kết thúc
-            System.out.println("[SERVER] Game " + gameId + " ended: " + resultType);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public void startGameTimer() {
-        timer = new Timer(true); // true = daemon thread, tự dừng khi server tắt
+        timer = new Timer(true);
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                if (gameEnded) { // 👈 nếu game đã kết thúc, dừng timer
+                if (gameEnded) { // nếu game đã kết thúc, dừng timer
                     cancel();
                     return;
                 }
@@ -168,11 +153,6 @@ public class GameRoom {
                 }
             }
         }, 1000, 1000);
-    }
-
-
-    public void handlePlayerDisconnect(ClientHandler disconnectedPlayer) throws SQLException, IOException {
-        //
     }
 
     public void handlePlayerQuit(ClientHandler quitter) {
@@ -208,7 +188,6 @@ public class GameRoom {
             Word word = wordDAO.getWordById(wordId);
             boolean isCorrect = word != null && word.getWord().equalsIgnoreCase(answer.trim());
 
-            // Cập nhật vào DB
             gameDAO.updateGameDetailAnswer(gameId, wordId, isPlayer1, answer, isCorrect);
 
             // Cập nhật điểm trong GameRoom
@@ -224,7 +203,7 @@ public class GameRoom {
             personalResult.put("correct", isCorrect);
             sender.sendMessage(new Message("answer_result", personalResult));
 
-            // Gửi cập nhật điểm CHO CẢ 2 (theo hướng hiển thị riêng)
+            // Gửi cập nhật điểm CHO CẢ 2
             Map<String, Object> scoreP1 = new HashMap<>();
             scoreP1.put("your_score", p1Score);
             scoreP1.put("opponent_score", p2Score);

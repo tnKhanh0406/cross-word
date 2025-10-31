@@ -9,13 +9,16 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UserDAO {
+public class UserDAO extends DAO {
+
+    public UserDAO() {
+        super();
+    }
 
     public User validate(String username, String password) {
         String query = "SELECT * FROM user WHERE username = ? AND password = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-
+        try {
+            PreparedStatement ps = conn.prepareStatement(query);
             ps.setString(1, username);
             ps.setString(2, password);
             ResultSet rs = ps.executeQuery();
@@ -40,7 +43,7 @@ public class UserDAO {
 
     public void updateUserStatus(int id, String status) {
         String sql = "UPDATE user SET status = ? WHERE user_id = ?";
-        try(Connection conn = DBConnection.getConnection()) {
+        try {
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, status);
             ps.setInt(2, id);
@@ -53,7 +56,7 @@ public class UserDAO {
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
         String sql = "SELECT * FROM user";
-        try(Connection conn = DBConnection.getConnection()) {
+        try {
             PreparedStatement ps = conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
@@ -75,7 +78,7 @@ public class UserDAO {
 
     public void addTotalPoint(int user_id, double points) {
         String sql = "UPDATE user SET total_points = total_points + ? WHERE user_id = ?";
-        try(Connection conn = DBConnection.getConnection()) {
+        try{
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setDouble(1, points);
             ps.setInt(2, user_id);
@@ -87,7 +90,7 @@ public class UserDAO {
 
     public void addTotalWin(int user_id, int win) {
         String sql = "UPDATE user SET total_wins = total_wins + ? WHERE user_id = ?";
-        try(Connection conn = DBConnection.getConnection()) {
+        try {
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setInt(1, win);
             ps.setInt(2, user_id);
@@ -100,7 +103,7 @@ public class UserDAO {
     public List<User> ranking(String sortType) {
         List<User> users = new ArrayList<>();
         String sql = "SELECT * FROM User ORDER BY " + sortType;
-        try(Connection conn = DBConnection.getConnection()) {
+        try{
             PreparedStatement ps = conn.prepareStatement(sql);
             System.out.println(sortType);
             ResultSet rs = ps.executeQuery();
@@ -120,5 +123,31 @@ public class UserDAO {
             throw new RuntimeException(e);
         }
         return users;
+    }
+
+    public boolean existsByUsername(String username) {
+        String sql = "SELECT COUNT(*) FROM user WHERE username = ?";
+        try{
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, username);
+            ResultSet rs = ps.executeQuery();
+            rs.next();
+            return rs.getInt(1) > 0;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void createUser(String username, String password, String displayName) throws SQLException {
+        String sql = "INSERT INTO user(username, password, display_name, status, total_points, total_wins) VALUES(?, ?, ?, 'offline', 0, 0)";
+        try {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, username);
+            ps.setString(2, password);
+            ps.setString(3, displayName);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
