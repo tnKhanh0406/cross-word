@@ -34,7 +34,7 @@
         </HBox>
     </top>
 
-    <!-- CENTER: Left = TabPane (10 tabs do controller tạo động), Right = Chat -->
+    <!-- CENTER: Left = TabPane, Right = Chat -->
     <center>
         <HBox spacing="12" style="-fx-padding:12;">
             <!-- LEFT: Tabs area -->
@@ -51,7 +51,7 @@
             <VBox prefWidth="340" spacing="8" style="-fx-background-color:#fff; -fx-border-color:#e0e0e0; -fx-border-width:1; -fx-padding:8;">
                 <Label text="Chat với đối thủ" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
 
-                <!-- Messages list (controller có thể bind/update items) -->
+                <!-- Messages list -->
                 <TextArea fx:id="lvChatMessages" prefHeight="470" prefWidth="320" />
 
                 <!-- Input -->
