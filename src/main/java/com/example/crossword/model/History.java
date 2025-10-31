@@ -2,16 +2,16 @@ package com.example.crossword.model;
 
 import java.io.Serializable;
 
-public class HistoryDTO implements Serializable {
+public class History implements Serializable {
     private int game_id;
     private String opponent_name;
     private String result;
     private String time;
 
-    public HistoryDTO() {
+    public History() {
     }
 
-    public HistoryDTO(int game_id, String opponent_name, String result, String time) {
+    public History(int game_id, String opponent_name, String result, String time) {
         this.game_id = game_id;
         this.opponent_name = opponent_name;
         this.result = result;

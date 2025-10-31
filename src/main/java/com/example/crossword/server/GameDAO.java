@@ -1,8 +1,7 @@
 package com.example.crossword.server;
 
-import com.example.crossword.model.Game;
-import com.example.crossword.model.HistoryDTO;
-import com.example.crossword.model.HistoryDetailDTO;
+import com.example.crossword.model.History;
+import com.example.crossword.model.HistoryDetail;
 import com.example.crossword.model.Word;
 
 import java.sql.*;
@@ -87,8 +86,8 @@ public class GameDAO {
         }
     }
     
-    public List<HistoryDTO> getGamesByUserId(int userId) {
-        List<HistoryDTO> games = new ArrayList<>();
+    public List<History> getGamesByUserId(int userId) {
+        List<History> games = new ArrayList<>();
         String sql = """
                 SELECT\s
                     g.*,
@@ -124,7 +123,7 @@ public class GameDAO {
             ps.setInt(7, userId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                HistoryDTO game = new HistoryDTO();
+                History game = new History();
                 game.setGame_id(rs.getInt("game_id"));
                 game.setOpponent_name(rs.getString("opponent_name"));
                 game.setResult(rs.getString("final_result"));
@@ -140,7 +139,7 @@ public class GameDAO {
         return games;
     }
 
-    public List<HistoryDetailDTO> getGameDetail(int gameId, int userId) {
+    public List<HistoryDetail> getGameDetail(int gameId, int userId) {
         String sql = """
                 SELECT\s
                     gd.round_number,
@@ -159,7 +158,7 @@ public class GameDAO {
                 WHERE gd.game_id = ?
                 ORDER BY gd.round_number;
                 """;
-        List<HistoryDetailDTO> gameDetails = new ArrayList<>();
+        List<HistoryDetail> gameDetails = new ArrayList<>();
         try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setInt(1, userId);
@@ -167,7 +166,7 @@ public class GameDAO {
             ps.setInt(3, gameId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                HistoryDetailDTO detail = new HistoryDetailDTO();
+                HistoryDetail detail = new HistoryDetail();
                 detail.setRound(rs.getInt("round_number"));
                 detail.setWord(rs.getString("word_text"));
                 detail.setMyAnswer(rs.getString("player_answer"));

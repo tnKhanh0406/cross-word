@@ -26,20 +26,20 @@ public class HomeController {
     @FXML private TableColumn<User, String> colStatus;
 
     // Tab 2
-    @FXML private TableView<HistoryDTO> tblGames;
-    @FXML private TableColumn<HistoryDTO, Integer> colGameId;
-    @FXML private TableColumn<HistoryDTO, String> colOpponent;
-    @FXML private TableColumn<HistoryDTO, String> colResult;
-    @FXML private TableColumn<HistoryDTO, String> colStartTime;
+    @FXML private TableView<History> tblGames;
+    @FXML private TableColumn<History, Integer> colGameId;
+    @FXML private TableColumn<History, String> colOpponent;
+    @FXML private TableColumn<History, String> colResult;
+    @FXML private TableColumn<History, String> colStartTime;
 
-    @FXML private TableView<HistoryDetailDTO> tblGameDetails;
-    @FXML private TableColumn<HistoryDetailDTO, Integer> colRound;
-    @FXML private TableColumn<HistoryDetailDTO, String> colWord;
-    @FXML private TableColumn<HistoryDetailDTO, String> colPlayerAnswer;
-    @FXML private TableColumn<HistoryDetailDTO, String> colOpponentAnswer;
+    @FXML private TableView<HistoryDetail> tblGameDetails;
+    @FXML private TableColumn<HistoryDetail, Integer> colRound;
+    @FXML private TableColumn<HistoryDetail, String> colWord;
+    @FXML private TableColumn<HistoryDetail, String> colPlayerAnswer;
+    @FXML private TableColumn<HistoryDetail, String> colOpponentAnswer;
 
-    private ObservableList<HistoryDTO> gamesList = FXCollections.observableArrayList();
-    private ObservableList<HistoryDetailDTO> detailsList = FXCollections.observableArrayList();
+    private ObservableList<History> gamesList = FXCollections.observableArrayList();
+    private ObservableList<HistoryDetail> detailsList = FXCollections.observableArrayList();
 
     // Tab 3
     @FXML private ComboBox<String> cbSortType;
@@ -96,10 +96,10 @@ public class HomeController {
         colOpponentAnswer.setCellValueFactory(new PropertyValueFactory<>("opponentAnswer"));
         tblGameDetails.setItems(detailsList);
         tblGames.setRowFactory(tv -> {
-            TableRow<HistoryDTO> row = new TableRow<>();
+            TableRow<History> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
                 if (!row.isEmpty() && event.getClickCount() == 1) {
-                    HistoryDTO clickedHistory = row.getItem();
+                    History clickedHistory = row.getItem();
                     try {
                         client.sendMessage(new Message("get_history_details", clickedHistory.getGame_id()));
                     } catch (IOException e) {
@@ -204,12 +204,12 @@ public class HomeController {
         alert.showAndWait();
     }
 
-    public void updateGameList(List<HistoryDTO> histories) {
+    public void updateGameList(List<History> histories) {
         gamesList = FXCollections.observableList(histories);
         tblGames.setItems(gamesList);
     }
 
-    public void showGameDetails(List<HistoryDetailDTO> list) {
+    public void showGameDetails(List<HistoryDetail> list) {
         detailsList = FXCollections.observableList(list);
         tblGameDetails.setItems(detailsList);
     }

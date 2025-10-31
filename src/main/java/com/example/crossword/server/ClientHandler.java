@@ -135,7 +135,7 @@ public class ClientHandler implements Runnable {
 
     private void handleGetHistoryDetails(Message message) throws IOException, SQLException {
         int gameId = (int) message.getContent();
-        List<HistoryDetailDTO> list = gameDAO.getGameDetail(gameId, user.getId());
+        List<HistoryDetail> list = gameDAO.getGameDetail(gameId, user.getId());
         sendMessage(new Message("history_details", list));
     }
 
@@ -278,7 +278,7 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleGetHistory() {
-        List<HistoryDTO> histories = gameDAO.getGamesByUserId(user.getId());
+        List<History> histories = gameDAO.getGamesByUserId(user.getId());
         sendMessage(new Message("history", histories));
     }
 

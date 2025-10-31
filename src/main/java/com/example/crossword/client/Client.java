@@ -126,13 +126,13 @@ public class Client {
                 });
                 break;
             case "history":
-                List<HistoryDTO> histories =(List<HistoryDTO>) message.getContent();
+                List<History> histories =(List<History>) message.getContent();
                 Platform.runLater(() -> {
                     homeController.updateGameList(histories);
                 });
                 break;
             case "history_details":
-                List<HistoryDetailDTO> list = (List<HistoryDetailDTO>) message.getContent();
+                List<HistoryDetail> list = (List<HistoryDetail>) message.getContent();
                 Platform.runLater(() -> {
                     homeController.showGameDetails(list);
                 });
@@ -188,7 +188,8 @@ public class Client {
             case "answer_result":
                 Map<String, Object> data = (Map<String, Object>) message.getContent();
                 boolean correct = (boolean) data.get("correct");
-                Platform.runLater(() -> gameController.updateLbl(correct));
+                int wordId = (int) data.get("word_id");
+                Platform.runLater(() -> gameController.updateLbl(correct, wordId));
                 break;
             case "update_score":
                 Map<String, Object> scoreData = (Map<String, Object>) message.getContent();
@@ -249,8 +250,6 @@ public class Client {
                     }
                 });
                 break;
-
-
             case "rematch_declined":
                 Platform.runLater(() -> {
                     // Đóng popup cũ nếu còn
@@ -284,7 +283,6 @@ public class Client {
             primaryStage.setMinWidth(400);
             primaryStage.setMinHeight(300);
             primaryStage.show();
-//            sendMessage(new Message("get_users", null));
         } catch (IOException e) {
             e.printStackTrace();
             showErrorAlert("khong tai duoc giao dien chinh");
@@ -316,6 +314,8 @@ public class Client {
             Parent root = loader.load();
             gameController = loader.getController();
             gameController.setClient(this);
+            gameController.setLblMyName(user.getDisplayName());
+            gameController.setLblOpponentName("Opponent");
             Scene scene = new Scene(root);
 
             primaryStage.setScene(scene);

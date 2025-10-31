@@ -6,11 +6,14 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.application.Platform;
+import javafx.util.Pair;
 
 import java.io.*;
 import java.util.*;
 
 public class GameController {
+    @FXML private Label lblMyName;
+    @FXML private Label lblOpponentName;
     @FXML private Label lblTimer;
     @FXML private Label lblMyScore;
     @FXML private Label lblOpponentScore;
@@ -42,6 +45,10 @@ public class GameController {
 
     private Alert gameOverAlert;
 
+    private Map<Integer, Pair<TextField, Button>> wordInputMap = new HashMap<>();
+    private Map<Integer, Tab> wordTabMap = new HashMap<>();
+
+
     public Alert getGameOverAlert() {
         return gameOverAlert;
     }
@@ -64,12 +71,19 @@ public class GameController {
         this.gameId = gameId;
     }
 
+    public void setLblMyName(String lblMyName) {
+        this.lblMyName.setText(lblMyName);
+    }
+
+    public void setLblOpponentName(String lblOpponentName) {
+        this.lblOpponentName.setText(lblOpponentName);
+    }
+
     @FXML
     public void initialize() {
         lvChatMessages.setEditable(false);
         lblTimer.setText(formatTime(remainingSeconds));
         initTabs();
-//        startTimer();
     }
 
     private void initTabs() {
@@ -109,6 +123,9 @@ public class GameController {
 
             tab.setContent(content);
             tabWords.getTabs().add(tab);
+            // Lưu vào map để truy cập sau
+            wordInputMap.put(w.getId(), new Pair<>(txtAnswer, btnSubmit));
+            wordTabMap.put(w.getId(), tab);
         }
     }
 
@@ -191,13 +208,23 @@ public class GameController {
         } else {
             message = "Bạn đã thua!";
         }
+        String reason = (String) data.get("reason");
 
         gameOverAlert = new Alert(Alert.AlertType.CONFIRMATION);
         gameOverAlert.setTitle("Kết thúc trận đấu");
         gameOverAlert.setHeaderText(message);
-        gameOverAlert.setContentText("Điểm của bạn: " + lblMyScore.getText()
-                + "\nĐiểm đối thủ: " + lblOpponentScore.getText()
-                + "\n\nBạn muốn làm gì tiếp theo?");
+//        gameOverAlert.setContentText("Điểm của bạn: " + lblMyScore.getText()
+//                + "\nĐiểm đối thủ: " + lblOpponentScore.getText()
+//                + "\n\nBạn muốn làm gì tiếp theo?");
+        StringBuilder content = new StringBuilder();
+        if (reason != null && !reason.isEmpty()) {
+            content.append(reason).append("\n\n");
+        }
+        content.append("Điểm của bạn: ").append(lblMyScore.getText())
+                .append("\nĐiểm đối thủ: ").append(lblOpponentScore.getText())
+                .append("\n\nBạn muốn làm gì tiếp theo?");
+
+        gameOverAlert.setContentText(content.toString());
 
 //        ButtonType rematchBtn = new ButtonType("Mời chơi lại");
         ButtonType homeBtn = new ButtonType("Về trang chính");
@@ -226,27 +253,6 @@ public class GameController {
         gameOverAlert.show();
     }
 
-
-
-
-//    private void startTimer() {
-//        gameTimer = new Timer();
-//        gameTimer.scheduleAtFixedRate(new TimerTask() {
-//            @Override
-//            public void run() {
-//                Platform.runLater(() -> {
-//                    remainingSeconds--;
-//                    lblTimer.setText(formatTime(remainingSeconds));
-//                    if (remainingSeconds <= 0) {
-//                        gameTimer.cancel();
-//                        lblStatus.setText("Hết thời gian!");
-//                        endGame();
-//                    }
-//                });
-//            }
-//        }, 1000, 1000);
-//    }
-
     private List<String> getSortedUniqueLetters(String word) {
         Set<Character> set = new HashSet<>();
         for (char c : word.toUpperCase().toCharArray()) set.add(c);
@@ -271,9 +277,25 @@ public class GameController {
         });
     }
 
-    public void updateLbl(boolean correct) {
+    public void updateLbl(boolean correct, int wordId) {
         Platform.runLater(() -> {
             lblStatus.setText(correct ? "Bạn trả lời đúng!" : "Sai mất rồi!");
+            Pair<TextField, Button> pair = wordInputMap.get(wordId);
+            Tab tab = wordTabMap.get(wordId);
+            if(correct) {
+                if (pair != null && tab != null) {
+                    TextField txt = pair.getKey();
+                    Button btn = pair.getValue();
+
+                    txt.setDisable(true);
+                    btn.setDisable(true);
+
+                    // Đổi màu tab sang xanh lá cây
+                    tab.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+                }
+            } else {
+                tab.setStyle("-fx-background-color: red; -fx-text-fill: white;");
+            }
         });
     }
 

@@ -16,15 +16,21 @@
             <Label fx:id="lblTimer" text="05:00" style="-fx-font-size:20px; -fx-font-weight:bold;"/>
             <Region HBox.hgrow="ALWAYS"/>
             <HBox spacing="10" alignment="CENTER">
+                <!-- Cột của bạn -->
                 <VBox spacing="4" alignment="CENTER_RIGHT">
+                    <Label fx:id="lblMyName" text="Tên của bạn" style="-fx-font-size:12px; -fx-text-fill:#333; -fx-font-weight:bold;"/>
                     <Label text="Điểm của bạn" style="-fx-font-size:12px; -fx-text-fill:#666;"/>
                     <Label fx:id="lblMyScore" text="0 / 10" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
                 </VBox>
+
+                <!-- Cột đối thủ -->
                 <VBox spacing="4" alignment="CENTER_RIGHT" style="-fx-padding:0 0 0 12;">
+                    <Label fx:id="lblOpponentName" text="Tên đối thủ" style="-fx-font-size:12px; -fx-text-fill:#333; -fx-font-weight:bold;"/>
                     <Label text="Điểm đối thủ" style="-fx-font-size:12px; -fx-text-fill:#666;"/>
                     <Label fx:id="lblOpponentScore" text="0 / 10" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
                 </VBox>
             </HBox>
+
         </HBox>
     </top>
 
@@ -56,8 +62,9 @@
 
     <!-- BOTTOM: thông báo chung -->
     <bottom>
-        <HBox alignment="CENTER_LEFT" style="-fx-padding:8 12 12 12; -fx-background-color:#F8F9FB;">
+        <HBox alignment="CENTER_LEFT" style="-fx-padding:8 12 12 12; -fx-background-color:#F8F9FB;" spacing="10">
             <Label fx:id="lblStatus" text="" style="-fx-font-size:13px; -fx-text-fill:#2a7ae2;"/>
+            <Region HBox.hgrow="ALWAYS"/>
             <Button fx:id="quitButton" text="Thoát Trò Chơi" onAction="#handleQuitGame"/>
         </HBox>
     </bottom>

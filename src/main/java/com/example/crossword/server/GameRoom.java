@@ -16,7 +16,7 @@ public class GameRoom {
 
     private boolean gameEnded = false;
     private final int MAX_ROUNDS = 10;
-    private final int GAME_TIMEOUT = 20;
+    private final int GAME_TIMEOUT = 300;
     private int remainingTime = GAME_TIMEOUT;
 
     private transient Timer timer;
@@ -170,25 +170,36 @@ public class GameRoom {
         }, 1000, 1000);
     }
 
-    public void returnToHome() {
-//        try {
-//            player1.sendMessage(new Message("return_home", null));
-//            player2.sendMessage(new Message("return_home", null));
-//            player1.getUser().setStatus("online");
-//            player2.getUser().setStatus("online");
-//            GameManager.getInstance().removeGameRoom(gameId);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-    }
-
 
     public void handlePlayerDisconnect(ClientHandler disconnectedPlayer) throws SQLException, IOException {
         //
     }
 
-    public void handlePlayerQuit(ClientHandler clientHandler) {
+    public void handlePlayerQuit(ClientHandler quitter) {
+        gameEnded = true;
+        boolean isPlayer1 = quitter.equals(player1);
+        ClientHandler winner = isPlayer1 ? player2 : player1;
+        String result = isPlayer1 ? "p2_win" : "p1_win";
+        gameDAO.finishGame(gameId, winner.getUser().getId(), result);
+        userDAO.addTotalPoint(winner.getUser().getId(), 1);
+        userDAO.addTotalWin(winner.getUser().getId(), 1);
 
+        Map<String, Object> endDataP1 = new HashMap<>();
+        Map<String, Object> endDataP2 = new HashMap<>();
+        endDataP1.put("winner_id", winner.getUser().getId());
+        endDataP2.put("winner_id", winner.getUser().getId());
+        endDataP1.put("result", result);
+        endDataP2.put("result", result);
+        if(result.equals("p1_win")) {
+            endDataP1.put("reason", "Đối thủ đã thoát trò chơi.");
+            endDataP2.put("reason", "Bạn đã thoát khỏi trò chơi.");
+        } else {
+            endDataP2.put("reason", "Đối thủ đã thoát trò chơi.");
+            endDataP1.put("reason", "Bạn đã thoát khỏi trò chơi.");
+        }
+
+        player1.sendMessage(new Message("game_over", endDataP1));
+        player2.sendMessage(new Message("game_over", endDataP2));
     }
 
     public void handleSubmitWord(ClientHandler sender, int gameId, int wordId, String answer) {
@@ -238,65 +249,4 @@ public class GameRoom {
         if (player1 != null) player1.sendMessage(message);
         if (player2 != null) player2.sendMessage(message);
     }
-
-
-//    public void handlePlayerQuit(ClientHandler clientHandler) {
-//        try {
-//            // Xác định ai là người thoát
-//            ClientHandler quitter = clientHandler;
-//            ClientHandler opponent = (quitter == player1) ? player2 : player1;
-//
-//            // Thông báo cho đối thủ biết
-//            if (opponent != null) {
-//                opponent.sendMessage(new Message("opponent_quit", quitter.getUser().getUsername() + " đã thoát trò chơi."));
-//                opponent.getUser().setStatus("available");
-//            }
-//
-//            // Cập nhật trạng thái người thoát
-//            quitter.getUser().setStatus("available");
-//
-//            // Lưu kết quả hoặc ghi log (tuỳ bạn muốn)
-//            System.out.println("Người chơi " + quitter.getUser().getUsername() + " đã thoát game " + gameId);
-//
-//            // Gửi message kết thúc cho cả 2 (nếu muốn)
-//            quitter.sendMessage(new Message("game_ended", "Bạn đã thoát trò chơi."));
-//            if (opponent != null) {
-//                opponent.sendMessage(new Message("game_ended", "Trò chơi đã kết thúc vì đối thủ rời đi."));
-//            }
-//
-//            // Ngắt kết nối với người thoát nếu cần
-//            // quitter.closeConnection(); // nếu bạn có hàm này
-//
-//            // Xoá game khỏi danh sách phòng đang chơi (tuỳ cấu trúc server)
-//            GameManager.getInstance().removeGame(this);
-//
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-//    case "opponent_quit":
-//    String msg = (String) message.getContent();
-//    Platform.runLater(() -> {
-//        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-//        alert.setTitle("Đối thủ rời game");
-//        alert.setHeaderText(null);
-//        alert.setContentText(msg);
-//        alert.showAndWait();
-//        showMainUI();
-//    });
-//    break;
-//
-//case "game_ended":
-//    String reason = (String) message.getContent();
-//    Platform.runLater(() -> {
-//        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-//        alert.setTitle("Kết thúc trò chơi");
-//        alert.setHeaderText(null);
-//        alert.setContentText(reason);
-//        alert.showAndWait();
-//        showMainUI();
-//    });
-//    break;
-
 }
