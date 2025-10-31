@@ -8,9 +8,10 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,6 +51,10 @@ public class HomeController {
     @FXML private TableColumn<User, Integer> colRankWins;
 
     @FXML private Label lblDisplayName;
+
+    private Set<Integer> pendingRequests = new HashSet<>();
+    private Map<Integer, Alert> activeAlerts = new HashMap<>();
+
 
     public void setDisplayName(String displayName) {
         lblDisplayName.setText(displayName);
@@ -177,15 +182,27 @@ public class HomeController {
         });
     }
 
-    public void showMatchRequest(int requesterId) {
+    public void showMatchRequest(Integer requesterId, String requesterName) {
+        if (pendingRequests.contains(requesterId)) {
+            System.out.println("Đã có lời mời từ người này, bỏ qua.");
+            return;
+        }
+        pendingRequests.add(requesterId);
+
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Yêu Cầu Trận Đấu");
-        alert.setHeaderText("Bạn nhận được yêu cầu trận đấu từ người chơi ID: " + requesterId);
+        alert.setHeaderText("Bạn nhận được yêu cầu trận đấu từ: " + requesterName);
         alert.setContentText("Bạn có muốn đồng ý?");
+
+        // Lưu alert để có thể đóng sau này
+        activeAlerts.put(requesterId, alert);
 
         alert.showAndWait().ifPresent(response -> {
             boolean accepted = response == ButtonType.OK;
-            Object[] data = { requesterId, accepted };
+            pendingRequests.remove(requesterId);
+            activeAlerts.remove(requesterId);
+
+            Object[] data = { requesterId, accepted, new HashSet<>(pendingRequests) };
             Message responseMessage = new Message("match_response", data);
             try {
                 client.sendMessage(responseMessage);
@@ -194,6 +211,8 @@ public class HomeController {
             }
         });
     }
+
+
 
     public void handleMatchResponse(String response) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -258,6 +277,17 @@ public class HomeController {
                 }
             }
         });
+    }
+
+    public void closeMatchRequest(int requesterId) {
+        Alert alert = activeAlerts.remove(requesterId);
+        if (alert != null) {
+            Platform.runLater(() -> {
+                Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
+                stage.close();
+            });
+        }
+        pendingRequests.remove(requesterId);
     }
 
 }

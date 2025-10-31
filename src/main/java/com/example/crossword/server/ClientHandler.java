@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ClientHandler implements Runnable {
     private Socket socket;
@@ -51,7 +52,7 @@ public class ClientHandler implements Runnable {
             System.out.println("Kết nối với " + (user != null ? user.getUsername() : "client") + " bị ngắt.");
             isRunning = false;
             if (gameRoom != null) {
-                gameRoom.handlePlayerQuit(this);
+//                gameRoom.handlePlayerQuit(this);
             }
         } finally {
             try {
@@ -249,6 +250,7 @@ public class ClientHandler implements Runnable {
         Object[] data = (Object[]) message.getContent();
         int requesterId = (int) data[0];
         boolean accepted = (boolean) data[1];
+        Set<Integer> senderIds = (Set<Integer>) data[2];
         ClientHandler requester = server.getClientById(requesterId);
         if (requester != null) {
             if (accepted) {
@@ -265,6 +267,12 @@ public class ClientHandler implements Runnable {
                 server.broadcast(new Message("status_update", requester.user.getUsername() + " busy"));
 
                 newGameRoom.startGame();
+                for (int senderId : senderIds) {
+                    ClientHandler sender = server.getClientById(senderId);
+                    if (sender != null) {
+                        sender.sendMessage(new Message("match_response", "Yêu cầu trận đấu của bạn đã bị từ chối."));
+                    }
+                }
             } else {
                 requester.sendMessage(new Message("match_response", "Yêu cầu trận đấu của bạn đã bị từ chối."));
             }
@@ -279,7 +287,8 @@ public class ClientHandler implements Runnable {
             System.out.println("Opponent found: " + opponent.getUser().getUsername() + " - Status: "
                     + opponent.getUser().getStatus());
             if (opponent.getUser().getStatus().equals("online")) {
-                opponent.sendMessage(new Message("match_request", user.getId()));
+                Object[] o = {user.getId(), user.getDisplayName()};
+                opponent.sendMessage(new Message("match_request", o));
                 System.out.println("Match request sent to " + opponent.getUser().getUsername());
             } else {
                 sendMessage(new Message("match_response", "Người chơi không sẵn sàng."));

@@ -160,14 +160,19 @@ public class Client {
                 break;
             case "match_request":
                 System.out.println(message.getContent());
+                Object[] o = (Object[]) message.getContent();
                 Platform.runLater(() -> {
-                    homeController.showMatchRequest((int) message.getContent());
+                    homeController.showMatchRequest((Integer) o[0], (String) o[1]);
                 });
                 break;
             case "match_response":
                 Platform.runLater(() -> {
                     homeController.handleMatchResponse((String) message.getContent());
                 });
+                break;
+            case "cancel_match_request":
+                int requesterId = (int) message.getContent();
+                Platform.runLater(() -> homeController.closeMatchRequest(requesterId));
                 break;
             case "game_start": {
                 Map<String, Object> data = (Map<String, Object>) message.getContent();

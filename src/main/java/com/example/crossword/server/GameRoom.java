@@ -14,7 +14,7 @@ public class GameRoom {
 
     private boolean gameEnded = false;
     private final int MAX_ROUNDS = 10;
-    private final int GAME_TIMEOUT = 300;
+    private final int GAME_TIMEOUT = 20;
     private int remainingTime = GAME_TIMEOUT;
 
     private transient Timer timer;
