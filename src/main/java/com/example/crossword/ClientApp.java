@@ -4,15 +4,11 @@ import com.example.crossword.client.Client;
 import com.example.crossword.model.Message;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.stage.Stage;
-
-import javafx.scene.Parent;
 
 import java.io.IOException;
 
-public class HelloApplication extends Application {
+public class ClientApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
