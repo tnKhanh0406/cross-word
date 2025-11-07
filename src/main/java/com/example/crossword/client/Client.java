@@ -208,8 +208,8 @@ public class Client {
             case "answer_result":
                 Map<String, Object> data = (Map<String, Object>) message.getContent();
                 boolean correct = (boolean) data.get("correct");
-                int wordId = (int) data.get("word_id");
-                Platform.runLater(() -> gameController.updateLbl(correct, wordId));
+                Word word = (Word) data.get("word");
+                Platform.runLater(() -> gameController.updateLbl(correct, word));
                 break;
             case "update_score":
                 Map<String, Object> scoreData = (Map<String, Object>) message.getContent();

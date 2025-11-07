@@ -14,7 +14,7 @@ public class GameRoom {
 
     private boolean gameEnded = false;
     private final int MAX_ROUNDS = 10;
-    private final int GAME_TIMEOUT = 10;
+    private final int GAME_TIMEOUT = 300;
     private int remainingTime = GAME_TIMEOUT;
 
     private transient Timer timer;
@@ -199,7 +199,7 @@ public class GameRoom {
 
             // Gửi kết quả RIÊNG cho người gửi
             Map<String, Object> personalResult = new HashMap<>();
-            personalResult.put("word_id", wordId);
+            personalResult.put("word", wordDAO.getWordById(wordId));
             personalResult.put("correct", isCorrect);
             sender.sendMessage(new Message("answer_result", personalResult));
 

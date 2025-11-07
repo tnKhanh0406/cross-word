@@ -48,6 +48,8 @@ public class GameController {
     private Map<Integer, Pair<TextField, Button>> wordInputMap = new HashMap<>();
     private Map<Integer, Tab> wordTabMap = new HashMap<>();
 
+    private Map<Integer, List<Label>> wordCellsMap = new HashMap<>();
+
 
     public Alert getGameOverAlert() {
         return gameOverAlert;
@@ -93,6 +95,7 @@ public class GameController {
 
         for (int i = 0; i < words.size(); i++) {
             Word w = words.get(i);
+            List<Label> cells = new ArrayList<>();
 
             // HBox cho từng hàng
             HBox row = new HBox(8);
@@ -121,9 +124,10 @@ public class GameController {
                                 "-fx-background-color: #ffffff;" +
                                 "-fx-font-size: 14px;"
                 );
+                cells.add(cell);
                 row.getChildren().add(cell);
             }
-
+            wordCellsMap.put(w.getId(), cells);
             vboxCrosswordGrid.getChildren().add(row);
         }
     }
@@ -307,11 +311,11 @@ public class GameController {
         });
     }
 
-    public void updateLbl(boolean correct, int wordId) {
+    public void updateLbl(boolean correct, Word word) {
         Platform.runLater(() -> {
             lblStatus.setText(correct ? "Bạn trả lời đúng!" : "Sai mất rồi!");
-            Pair<TextField, Button> pair = wordInputMap.get(wordId);
-            Tab tab = wordTabMap.get(wordId);
+            Pair<TextField, Button> pair = wordInputMap.get(word.getId());
+            Tab tab = wordTabMap.get(word.getId());
             if(correct) {
                 if (pair != null && tab != null) {
                     TextField txt = pair.getKey();
@@ -323,6 +327,23 @@ public class GameController {
                     // Đổi màu tab sang xanh lá cây
                     tab.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
                 }
+                List<Label> cells = wordCellsMap.get(word.getId());
+                String ans = word.getWord().toUpperCase();
+
+                for(int i = 0; i < ans.length(); i++){
+                    Label cell = cells.get(i);
+                    cell.setText(String.valueOf(ans.charAt(i)));
+                    cell.setStyle(
+                            "-fx-border-color: #2e7d32;" +
+                                    "-fx-border-radius: 4;" +
+                                    "-fx-background-radius: 4;" +
+                                    "-fx-background-color: #a5d6a7;" +
+                                    "-fx-font-size: 14px;" +
+                                    "-fx-font-weight: bold;"
+                    );
+                }
+
+
             } else {
                 tab.setStyle("-fx-background-color: red; -fx-text-fill: white;");
             }
