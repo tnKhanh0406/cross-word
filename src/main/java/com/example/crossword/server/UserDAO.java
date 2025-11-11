@@ -53,11 +53,12 @@ public class UserDAO extends DAO {
         }
     }
 
-    public List<User> getAllUsers() {
+    public List<User> getAllUsers(int currentId) {
         List<User> users = new ArrayList<>();
-        String sql = "SELECT * FROM user";
+        String sql = "SELECT * FROM user where user.user_id <> ?";
         try {
             PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setInt(1, currentId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 User user = new User();

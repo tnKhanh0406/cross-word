@@ -83,7 +83,7 @@ public class ClientHandler implements Runnable {
                 handleRegister(message);
                 break;
             case "get_users":
-                handleGetUsers();
+                handleGetUsers(message);
                 break;
             case "get_history":
                 handleGetHistory();
@@ -140,7 +140,7 @@ public class ClientHandler implements Runnable {
         if (user != null) {
             userDAO.updateUserStatus(user.getId(), "offline");
             user.setStatus("offline");
-            server.broadcast(new Message("status_update", user.getUsername() + " offline."));
+            server.broadcast(new Message("status_update", user.getUsername() + " offline"));
             sendMessage(new Message("logout_success", "Đăng xuất thành công."));
             server.removeClient(this);
         }
@@ -300,8 +300,9 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleGetUsers() {
-        List<User> users = userDAO.getAllUsers();
+    private void handleGetUsers(Message message) {
+        int id = (int) message.getContent();
+        List<User> users = userDAO.getAllUsers(id);
         sendMessage(new Message("user_list", users));
     }
 

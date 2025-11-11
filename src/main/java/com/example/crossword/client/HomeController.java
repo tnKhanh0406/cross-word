@@ -67,6 +67,28 @@ public class HomeController {
         colTotalPoints.setCellValueFactory(new PropertyValueFactory<>("totalPoints"));
         colTotalWins.setCellValueFactory(new PropertyValueFactory<>("totalWins"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
+        colStatus.setCellFactory(column -> new TableCell<User, String>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+
+                if (empty || status == null) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+
+                setText(status);
+
+                switch (status.toLowerCase()) {
+                    case "online" -> setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
+                    case "offline" -> setStyle("-fx-text-fill: red;");
+                    case "busy" -> setStyle("-fx-text-fill: orange;");
+                    default -> setStyle("");
+                }
+            }
+        });
+
         tblUsers.setItems(usersList);
 
         tblUsers.setRowFactory(tf -> {
@@ -142,13 +164,13 @@ public class HomeController {
 
     public void setClient(Client client) throws IOException {
         this.client = client;
-        loadUsers();
+        loadUsers(this.client.getUser().getId());
         loadHistory();
         loadLeaderboard();
     }
 
-    public void loadUsers() throws IOException {
-        client.sendMessage(new Message("get_users", null));
+    public void loadUsers(int id) throws IOException {
+        client.sendMessage(new Message("get_users", id));
     }
 
     public void loadHistory() throws IOException {
